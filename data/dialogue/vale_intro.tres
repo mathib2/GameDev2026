@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_dialogue"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_line.gd" id="2_line"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_choice.gd" id="3_choice"]
+[ext_resource type="Texture2D" path="res://assets/sprites/portrait_fixer.png" id="4_portrait"]
+
+[sub_resource type="Resource" id="Resource_choice_yes"]
+script = ExtResource("3_choice")
+text = "Obviously. Where is it?"
+goto_line = 2
+required_flags = []
+required_item = &""
+sets_flags = []
+
+[sub_resource type="Resource" id="Resource_choice_no"]
+script = ExtResource("3_choice")
+text = "Could I not just... roll one?"
+goto_line = 3
+required_flags = []
+required_item = &""
+sets_flags = []
+
+[sub_resource type="Resource" id="Resource_line_0"]
+script = ExtResource("2_line")
+speaker = "Vale"
+portrait = ExtResource("4_portrait")
+text = "You're the one who breached a vending machine to get a soda you had exact change for."
+choices = []
+sets_flags = []
+starts_mission = &""
+grants_item = &""
+
+[sub_resource type="Resource" id="Resource_line_1"]
+script = ExtResource("2_line")
+speaker = "Vale"
+portrait = ExtResource("4_portrait")
+text = "I have a contract. Client wants the wheel improved. The wheel. The round one.
+
+Think you can reinvent it?"
+choices = [SubResource("Resource_choice_yes"), SubResource("Resource_choice_no")]
+sets_flags = []
+starts_mission = &""
+grants_item = &""
+
+[sub_resource type="Resource" id="Resource_line_2"]
+script = ExtResource("2_line")
+speaker = "Vale"
+portrait = ExtResource("4_portrait")
+text = "Access point's in the old district. Try to make it worse in an impressive way."
+choices = []
+sets_flags = [&"met_vale"]
+starts_mission = &"reinvent_the_wheel"
+grants_item = &""
+
+[sub_resource type="Resource" id="Resource_line_3"]
+script = ExtResource("2_line")
+speaker = "Vale"
+portrait = ExtResource("4_portrait")
+text = "You could. You won't. Access point's in the old district."
+choices = []
+sets_flags = [&"met_vale"]
+starts_mission = &"reinvent_the_wheel"
+grants_item = &""
+
+[resource]
+script = ExtResource("1_dialogue")
+id = &"vale_intro"
+lines = [SubResource("Resource_line_0"), SubResource("Resource_line_1"), SubResource("Resource_line_2"), SubResource("Resource_line_3")]
+required_flags = []
+blocked_by_flags = [&"met_vale"]
+priority = 10

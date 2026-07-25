@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="LocationData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/location_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"neon_district"
+display_name = "Neon District"
+scene_path = "res://levels/city/NeonDistrict.tscn"
+ambient_light = Color(1, 1, 1, 1)
+required_flags = []
+discovered_by_default = true

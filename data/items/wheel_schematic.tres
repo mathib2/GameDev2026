@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"wheel_schematic"
+display_name = "WHEEL 2.0 — Schematic"
+description = "Bluetooth. Wi-Fi. Cloud sync. AI-powered rotation. Blockchain-enabled.
+Security rating: 0/10. Already compromised. Still round."
+category = 4
+value = 0
+sellable = false
+stackable = false
+max_stack = 1
+sets_flags = []
+stat_modifiers = {}
+consumed_on_use = false

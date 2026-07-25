@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/hacking/hackable_object.gd" id="1_hackable"]
+[ext_resource type="Texture2D" path="res://assets/sprites/hack_glow.png" id="2_glow"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_range"]
+radius = 30.0
+
+[node name="HackableObject" type="Area2D"]
+collision_layer = 8
+collision_mask = 2
+script = ExtResource("1_hackable")
+
+[node name="HackGlow" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0.4)
+texture = ExtResource("2_glow")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_range")

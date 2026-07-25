@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/mission_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/mission_objective.gd" id="2_objective"]
+[ext_resource type="Script" path="res://scripts/data/reward_data.gd" id="3_reward"]
+
+[sub_resource type="Resource" id="Resource_obj_find"]
+script = ExtResource("2_objective")
+description = "Find the wheel access point in the old district"
+completed_when_flag = &"found_wheel_access"
+hidden_until_active = false
+optional = false
+
+[sub_resource type="Resource" id="Resource_obj_hack"]
+script = ExtResource("2_objective")
+description = "Reinvent the wheel"
+completed_when_flag = &"wheel_reinvented"
+hidden_until_active = false
+optional = false
+
+[sub_resource type="Resource" id="Resource_reward"]
+script = ExtResource("3_reward")
+kind = 1
+id = &""
+amount = 500
+display_override = "+500 credits — client is thrilled, for some reason"
+
+[resource]
+script = ExtResource("1_script")
+id = &"reinvent_the_wheel"
+title = "REINVENT THE WHEEL"
+summary = "A client wants the wheel improved. The wheel currently works perfectly.
+This is not considered a blocker."
+giver_id = &"fixer_vale"
+required_flags = []
+blocked_by_flags = []
+auto_start = false
+hidden = false
+objectives = [SubResource("Resource_obj_find"), SubResource("Resource_obj_hack")]
+rewards = [SubResource("Resource_reward")]
+completion_flags = [&"wheel_contract_closed"]
+completion_text = "CONTRACT CLOSED — WHEEL 2.0 SHIPPED (AND COMPROMISED)"

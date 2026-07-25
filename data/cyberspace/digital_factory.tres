@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CyberspaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/cyberspace_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"digital_factory"
+display_name = "Digital Factory"
+scene_path = "res://scenes/cyberspace/DigitalFactory.tscn"
+fog_color = Color(0.05, 0, 0.12, 1)
+grid_color = Color(0, 1, 0.85, 1)
+ambient_energy = 0.4
+runner_speed = 8.0
+gravity_enabled = true

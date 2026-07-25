@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="MissionData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/mission_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/mission_objective.gd" id="2_objective"]
+[ext_resource type="Script" path="res://scripts/data/reward_data.gd" id="3_reward"]
+
+[sub_resource type="Resource" id="Resource_obj"]
+script = ExtResource("2_objective")
+description = "Acquire a soda"
+completed_when_flag = &"vending_machine_owned"
+hidden_until_active = false
+optional = false
+
+[sub_resource type="Resource" id="Resource_reward"]
+script = ExtResource("3_reward")
+kind = 3
+id = &""
+amount = 1
+display_override = "Intrusion +1"
+
+[resource]
+script = ExtResource("1_script")
+id = &"thirst"
+title = "THIRST"
+summary = "Obtain a beverage. You have exact change. This will not be relevant."
+giver_id = &"vendor_chen"
+required_flags = []
+blocked_by_flags = []
+auto_start = true
+hidden = false
+objectives = [SubResource("Resource_obj")]
+rewards = [SubResource("Resource_reward")]
+completion_flags = [&"thirst_quenched"]
+completion_text = "CONTRACT CLOSED — beverage acquired"

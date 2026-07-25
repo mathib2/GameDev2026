@@ -7,22 +7,47 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
+*~
 
 # Build output
 build/
+builds/
 dist/
+exports/
 bin/
 obj/
 *.tmp
 
 # Dependencies
 node_modules/
+__pycache__/
+*.pyc
 
-# Engine-specific (uncomment as needed)
-# Unity
-# Library/
-# Temp/
-# Logs/
-# Godot
-# .godot/
-# .import/
+# ── Godot 4 ──────────────────────────────────────────────────────────────
+# Godot regenerates everything in here from source assets. Committing it
+# causes constant, meaningless merge conflicts between teammates.
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Mono / C# (unused today, harmless to keep)
+.mono/
+mono_crash.*.json
+
+# NOTE: Godot 4 writes per-asset import settings as `<asset>.png.import` beside
+# the asset itself. Those are NOT covered by `.import/` above and MUST be
+# committed, so every teammate imports the asset identically. Do not add
+# `*.import` to this file.
+
+# ── Secrets ──────────────────────────────────────────────────────────────
+# Never commit API keys, tokens, or signing material.
+.env
+.env.*
+!.env.template
+*.pem
+*.key
+*.keystore
+*.p12
+secrets.cfg

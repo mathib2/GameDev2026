@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"breach_kit"
+display_name = "Breach Kit"
+description = "Raises intrusion while carried. Does not fit in a pocket."
+category = 3
+value = 120
+sellable = true
+stackable = false
+max_stack = 1
+sets_flags = []
+stat_modifiers = {
+&"intrusion": 1
+}
+consumed_on_use = false

@@ -1,0 +1,85 @@
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/npcs/NPC.tscn" id="2_npc"]
+[ext_resource type="PackedScene" path="res://scenes/objects/HackableObject.tscn" id="3_hackable"]
+[ext_resource type="Resource" path="res://data/npcs/fixer_vale.tres" id="4_vale"]
+[ext_resource type="Resource" path="res://data/npcs/vendor_chen.tres" id="5_chen"]
+[ext_resource type="Resource" path="res://data/hack_targets/vending_machine.tres" id="6_vending"]
+[ext_resource type="Resource" path="res://data/hack_targets/security_camera.tres" id="7_camera"]
+[ext_resource type="Resource" path="res://data/hack_targets/the_wheel.tres" id="8_wheel"]
+[ext_resource type="Texture2D" path="res://assets/sprites/vending_machine.png" id="9_vending_tex"]
+[ext_resource type="Texture2D" path="res://assets/sprites/security_camera.png" id="10_camera_tex"]
+[ext_resource type="Texture2D" path="res://assets/sprites/the_wheel.png" id="11_wheel_tex"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tile_street.png" id="12_tile"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
+size = Vector2(1280, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
+size = Vector2(24, 720)
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_ground"]
+diffuse_texture = ExtResource("12_tile")
+
+[node name="NeonDistrict" type="Node2D"]
+
+[node name="Ground" type="Sprite2D" parent="."]
+position = Vector2(320, 180)
+texture = SubResource("CanvasTexture_ground")
+region_enabled = true
+region_rect = Rect2(0, 0, 1280, 720)
+
+[node name="Walls" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="North" type="CollisionShape2D" parent="Walls"]
+position = Vector2(320, -172)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="South" type="CollisionShape2D" parent="Walls"]
+position = Vector2(320, 532)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="West" type="CollisionShape2D" parent="Walls"]
+position = Vector2(-332, 180)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="East" type="CollisionShape2D" parent="Walls"]
+position = Vector2(972, 180)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(320, 180)
+
+[node name="NPCs" type="Node2D" parent="."]
+
+[node name="Vale" parent="NPCs" instance=ExtResource("2_npc")]
+position = Vector2(150, 90)
+data = ExtResource("4_vale")
+
+[node name="Chen" parent="NPCs" instance=ExtResource("2_npc")]
+position = Vector2(520, 250)
+data = ExtResource("5_chen")
+
+[node name="Hackables" type="Node2D" parent="."]
+
+[node name="VendingMachine" parent="Hackables" instance=ExtResource("3_hackable")]
+position = Vector2(600, 240)
+target = ExtResource("6_vending")
+sprite_texture = ExtResource("9_vending_tex")
+mundane_use_text = "You have exact change. You do not use it."
+
+[node name="StreetCamera" parent="Hackables" instance=ExtResource("3_hackable")]
+position = Vector2(180, 320)
+target = ExtResource("7_camera")
+sprite_texture = ExtResource("10_camera_tex")
+mundane_use_text = "It is pointed at a bin."
+
+[node name="TheWheel" parent="Hackables" instance=ExtResource("3_hackable")]
+position = Vector2(760, 90)
+target = ExtResource("8_wheel")
+sprite_texture = ExtResource("11_wheel_tex")
+mundane_use_text = "It rolls. It has always rolled."
+discovery_flag = &"found_wheel_access"

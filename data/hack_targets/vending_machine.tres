@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="HackTargetData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hack_target_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/reward_data.gd" id="2_reward"]
+[ext_resource type="Resource" path="res://data/cyberspace/digital_factory.tres" id="3_construct"]
+
+[sub_resource type="Resource" id="Resource_reward_cola"]
+script = ExtResource("2_reward")
+kind = 0
+id = &"nutri_cola"
+amount = 1
+display_override = "Acquired: one (1) Nutri-Cola"
+
+[resource]
+script = ExtResource("1_script")
+id = &"vending_machine_a7"
+display_name = "Vending Machine A-7"
+description = "A beverage dispenser. It accepts coins."
+mundane_solution = "Insert two credits. Press B4."
+absurd_solution = "Breach the supply-chain firmware and issue a dispense command as root."
+threat_assessment = "TARGET RUNS AN UNPATCHED EMBEDDED STACK BEHIND A CORPORATE VPN.
+COUNTERMEASURES: 2 ACTIVE ICE PATROLS.
+COLLATERAL RISK: MINIMAL.
+NOTE: THE MACHINE IS UNLOCKED. THE COINS ARE IN YOUR POCKET."
+difficulty = 4
+trace_time = 60.0
+required_nodes = 3
+ice_count = 2
+required_skill = 0
+cyberspace = ExtResource("3_construct")
+rewards = [SubResource("Resource_reward_cola")]
+success_flags = [&"vending_machine_owned"]
+failure_flags = []
+repeatable = false
+failure_heat = 1

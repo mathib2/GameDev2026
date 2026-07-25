@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"nutri_cola"
+display_name = "Nutri-Cola"
+description = "Carbonated. Faintly metallic. Obtained at enormous personal risk."
+category = 1
+value = 2
+sellable = true
+stackable = true
+max_stack = 12
+sets_flags = [&"tasted_victory"]
+stat_modifiers = {}
+consumed_on_use = true

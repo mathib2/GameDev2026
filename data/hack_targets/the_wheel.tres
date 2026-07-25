@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="HackTargetData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hack_target_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/reward_data.gd" id="2_reward"]
+[ext_resource type="Resource" path="res://data/cyberspace/wheel_chamber.tres" id="3_construct"]
+
+[sub_resource type="Resource" id="Resource_reward_schematic"]
+script = ExtResource("2_reward")
+kind = 0
+id = &"wheel_schematic"
+amount = 1
+display_override = "Acquired: WHEEL 2.0 schematic"
+
+[sub_resource type="Resource" id="Resource_reward_xp"]
+script = ExtResource("2_reward")
+kind = 3
+id = &""
+amount = 2
+display_override = "Intrusion +2"
+
+[resource]
+script = ExtResource("1_script")
+id = &"the_wheel"
+display_name = "The Wheel"
+description = "A wheel. It is round. It works perfectly and always has."
+mundane_solution = "Roll it. This has worked for six thousand years."
+absurd_solution = "Fork the rotational substrate and ship a connected successor."
+threat_assessment = "TARGET IS THE ORIGINAL ROTATIONAL PRIMITIVE.
+COUNTERMEASURES: 3 ACTIVE ICE PATROLS.
+COLLATERAL RISK: CIVILIZATIONAL.
+NOTE: THE EXISTING WHEEL HAS NO KNOWN VULNERABILITIES, BECAUSE IT HAS
+NO KNOWN FEATURES. WE WILL BE ADDING SOME."
+difficulty = 5
+trace_time = 90.0
+required_nodes = 4
+ice_count = 3
+required_skill = 0
+cyberspace = ExtResource("3_construct")
+rewards = [SubResource("Resource_reward_schematic"), SubResource("Resource_reward_xp")]
+success_flags = [&"wheel_reinvented"]
+failure_flags = [&"wheel_still_round"]
+repeatable = false
+failure_heat = 0

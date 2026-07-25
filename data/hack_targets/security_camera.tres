@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="HackTargetData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/hack_target_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/reward_data.gd" id="2_reward"]
+[ext_resource type="Resource" path="res://data/cyberspace/digital_factory.tres" id="3_construct"]
+
+[sub_resource type="Resource" id="Resource_reward_credits"]
+script = ExtResource("2_reward")
+kind = 1
+id = &""
+amount = 40
+display_override = ""
+
+[resource]
+script = ExtResource("1_script")
+id = &"street_camera_11"
+display_name = "Street Camera 11"
+description = "A municipal camera. It is pointed at a bin."
+mundane_solution = "Walk around it. It is a camera."
+absurd_solution = "Pivot through the surveillance mesh and assume operator privileges."
+threat_assessment = "TARGET IS A NODE ON THE CITY SURVEILLANCE GRID.
+COUNTERMEASURES: 3 ACTIVE ICE PATROLS.
+COLLATERAL RISK: MODERATE.
+NOTE: NOBODY IS WATCHING THE FEED. NOBODY HAS EVER WATCHED THE FEED."
+difficulty = 3
+trace_time = 45.0
+required_nodes = 3
+ice_count = 3
+required_skill = 1
+cyberspace = ExtResource("3_construct")
+rewards = [SubResource("Resource_reward_credits")]
+success_flags = [&"camera_11_owned"]
+failure_flags = []
+repeatable = false
+failure_heat = 2

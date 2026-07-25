@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="NPCData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/npc_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/sprites/npc_fixer.png" id="2_sprite"]
+[ext_resource type="Texture2D" path="res://assets/sprites/portrait_fixer.png" id="3_portrait"]
+[ext_resource type="Resource" path="res://data/dialogue/vale_intro.tres" id="4_intro"]
+[ext_resource type="Resource" path="res://data/dialogue/vale_after_wheel.tres" id="5_after"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"fixer_vale"
+display_name = "Vale"
+bio = "A fixer. Hands out contracts. Has stopped asking why."
+sprite = ExtResource("2_sprite")
+portrait = ExtResource("3_portrait")
+sprite_scale = Vector2(1, 1)
+max_integrity = 100
+move_speed = 60.0
+behaviour = 0
+wander_radius = 32.0
+patrol_points = []
+faces_player_when_talking = true
+dialogues = [ExtResource("4_intro"), ExtResource("5_after")]
+interact_prompt = "Talk to Vale"
+is_shopkeeper = false
+shop_stock = []
+shop_markup = 1.0

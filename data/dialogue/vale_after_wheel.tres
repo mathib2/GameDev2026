@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_dialogue"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_line.gd" id="2_line"]
+[ext_resource type="Texture2D" path="res://assets/sprites/portrait_fixer.png" id="3_portrait"]
+
+[sub_resource type="Resource" id="Resource_line_0"]
+script = ExtResource("2_line")
+speaker = "Vale"
+portrait = ExtResource("3_portrait")
+text = "So it has Bluetooth now."
+choices = []
+sets_flags = []
+starts_mission = &""
+grants_item = &""
+
+[sub_resource type="Resource" id="Resource_line_1"]
+script = ExtResource("2_line")
+speaker = "Vale"
+portrait = ExtResource("3_portrait")
+text = "And somebody already owns it. Took them four minutes.
+
+The old one lasted six thousand years. Good work."
+choices = []
+sets_flags = []
+starts_mission = &""
+grants_item = &""
+
+[resource]
+script = ExtResource("1_dialogue")
+id = &"vale_after_wheel"
+lines = [SubResource("Resource_line_0"), SubResource("Resource_line_1")]
+required_flags = [&"wheel_reinvented"]
+blocked_by_flags = []
+priority = 50

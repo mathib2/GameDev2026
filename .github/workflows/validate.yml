@@ -1,0 +1,52 @@
+name: Validate project
+
+# Structural validation on every PR. This does NOT run the game — it catches
+# broken resource paths, malformed .tscn/.tres files, and dangling content
+# references, which is the class of error that hand-editing produces and that
+# is annoying to find by hand in review.
+#
+# Reviewers: this passing does not mean the game runs. Open it in Godot.
+
+on:
+  push:
+    branches: [master, godot-port]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate project structure
+        run: python3 tools/validate_project.py
+
+      - name: Check GDScript indentation
+        run: |
+          python3 - <<'PY'
+          import os, sys
+          bad = []
+          for base, dirs, files in os.walk('scripts'):
+              for fn in sorted(files):
+                  if not fn.endswith('.gd'):
+                      continue
+                  p = os.path.join(base, fn)
+                  tab = space = False
+                  for i, l in enumerate(open(p, encoding='utf-8'), 1):
+                      if not l.strip() or l.lstrip().startswith('#'):
+                          continue
+                      ind = l[:len(l) - len(l.lstrip())]
+                      if '\t' in ind:
+                          tab = True
+                      if ind and ind.strip(' ') == '':
+                          space = True
+                  if tab and space:
+                      bad.append(f"{p}: mixes tab- and space-indented lines")
+          for b in bad:
+              print("FAIL", b)
+          sys.exit(1 if bad else 0)
+          PY

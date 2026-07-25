@@ -1,0 +1,33 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/cyberspace/hack_node.gd" id="1_hacknode"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_node"]
+size = Vector3(1.6, 1.6, 1.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_node"]
+resource_local_to_scene = true
+albedo_color = Color(0.05, 0.9, 0.75, 1)
+emission_enabled = true
+emission = Color(0, 1, 0.85, 1)
+emission_energy_multiplier = 1.5
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_node"]
+size = Vector3(3, 3, 3)
+
+[node name="HackNode" type="Area3D"]
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("1_hacknode")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_node")
+surface_material_override/0 = SubResource("StandardMaterial3D_node")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_node")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(0, 1, 0.85, 1)
+light_energy = 1.5
+omni_range = 8.0

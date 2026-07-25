@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CyberspaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/cyberspace_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"wheel_chamber"
+display_name = "The Wheel Chamber"
+scene_path = "res://scenes/cyberspace/WheelChamber.tscn"
+fog_color = Color(0.12, 0.02, 0, 1)
+grid_color = Color(1, 0.65, 0.15, 1)
+ambient_energy = 0.5
+runner_speed = 9.0
+gravity_enabled = true

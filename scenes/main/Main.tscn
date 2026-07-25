@@ -1,0 +1,22 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/ui/HUD.tscn" id="2_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/DialogueBox.tscn" id="3_dialogue"]
+[ext_resource type="PackedScene" path="res://scenes/ui/HackTransition.tscn" id="4_transition"]
+[ext_resource type="PackedScene" path="res://scenes/ui/InventoryPanel.tscn" id="5_inventory"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_main")
+
+[node name="World" type="Node" parent="."]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="HUD" parent="UI" instance=ExtResource("2_hud")]
+
+[node name="DialogueBox" parent="UI" instance=ExtResource("3_dialogue")]
+
+[node name="HackTransition" parent="UI" instance=ExtResource("4_transition")]
+
+[node name="InventoryPanel" parent="UI" instance=ExtResource("5_inventory")]
