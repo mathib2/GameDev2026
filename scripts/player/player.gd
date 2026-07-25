@@ -191,7 +191,12 @@ func _aim_vector() -> Vector2:
 func _update_anim() -> void:
 	if state == State.DEAD:
 		return
-	anim.flip_h = (aim.x < 0.0) if state == State.ATTACK else (facing.x < 0.0 and velocity.x < -1.0)
+	# face the aim while attacking; otherwise only re-face on real
+	# horizontal movement so stopping or walking vertically never snaps
+	if state == State.ATTACK:
+		anim.flip_h = aim.x < 0.0
+	elif absf(velocity.x) > 1.0:
+		anim.flip_h = velocity.x < 0.0
 	match state:
 		State.DODGE:
 			pass

@@ -43,7 +43,7 @@ var sfx_shot: AudioStream = preload("res://assets/audio/sfx/soldier_shot.wav")
 func _ready() -> void:
 	add_to_group("enemy")
 	add_to_group("boss")
-	collision_layer = 4
+	collision_layer = 4 | 1   # wall bit too: nobody walks through a boss
 	collision_mask = 1
 	max_health = base_health * (1.0 + 0.35 * float(floor_index))
 	health = max_health

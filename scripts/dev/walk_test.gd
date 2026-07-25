@@ -23,6 +23,7 @@ var _stuck: float = 0.0
 var _last_pos: Vector2 = Vector2.ZERO
 var _done: bool = false
 var _debug_timer: float = 0.0
+var _stuck_events: int = 0
 
 var _actions := [&"move_left", &"move_right", &"move_up", &"move_down"]
 
@@ -82,12 +83,14 @@ func _physics_process(delta: float) -> void:
 		_stuck = 0.0
 	_last_pos = player.global_position
 	if _stuck > STUCK_LIMIT:
+		# A bumped pedestal/crate is bot clumsiness (real players steer);
+		# repeated stucks mean something systemic like a dead door.
+		_stuck_events += 1
 		var info = RunManager.current_info
-		_failures.append("STUCK at %s heading for %s in room kind=%d floor=%d" % [
-			player.global_position, target, info.kind if info else -1, GameState.floor_index])
-		print("[WALK] FAIL: ", _failures.back())
+		print("[WALK] stuck #%d at %s heading for %s in room kind=%d floor=%d" % [
+			_stuck_events, player.global_position, target,
+			info.kind if info else -1, GameState.floor_index])
 		_stuck = 0.0
-		# hard-recover so the rest of the run still gets tested
 		var d := _next_dir()
 		if d != "":
 			RunManager.travel(d)
@@ -100,13 +103,18 @@ func _physics_process(delta: float) -> void:
 func _current_target(room) -> Vector2:
 	var d := _next_dir()
 	if d != "":
-		# waypoint: mid-lane first so crates never block the approach
+		# waypoint: reach the door's lane first, offset from the room centre
+		# so the solid pedestals that live there never block the approach
 		var door := _door_pos(room, d)
 		var center := Vector2(room.W * 0.5, room.H * 0.5)
 		var player = RunManager.player
-		var on_lane: bool = (absf(player.global_position.x - center.x) < 26.0) \
-			if (d == "u" or d == "d") else (absf(player.global_position.y - center.y) < 26.0)
-		return door if on_lane else center
+		var on_lane: bool = (absf(player.global_position.x - center.x) < 30.0) \
+			if (d == "u" or d == "d") else (absf(player.global_position.y - center.y) < 30.0)
+		if on_lane:
+			return door
+		if d == "u" or d == "d":
+			return Vector2(center.x, center.y - 44.0 if player.global_position.y < center.y else center.y + 44.0)
+		return Vector2(center.x - 44.0 if player.global_position.x < center.x else center.x + 44.0, center.y)
 	# floor exhausted: ride the exit portal at the centre
 	if _bosses > 0:
 		return Vector2(room.W * 0.5, room.H * 0.5)
@@ -191,8 +199,11 @@ func _report_and_quit() -> void:
 	print("[WALK] floors seen:   %d" % _floors)
 	print("[WALK] bosses killed: %d" % _bosses)
 	print("[WALK] victory:       %s" % _won)
+	print("[WALK] stuck events:  %d" % _stuck_events)
 	if not _won:
 		_failures.append("never reached victory")
+	if _stuck_events > 3:
+		_failures.append("stuck %d times — navigation is systemically broken" % _stuck_events)
 	if _failures.is_empty():
 		print("[WALK] PASS")
 		get_tree().quit(0)

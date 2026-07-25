@@ -52,6 +52,7 @@ func start_run() -> void:
 	over.visible = false
 	hud.visible = true
 	get_tree().paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN   # the HUD crosshair takes over
 	RunManager.start_run()
 
 
@@ -59,6 +60,7 @@ func _toggle_pause() -> void:
 	var p := not get_tree().paused
 	get_tree().paused = p
 	pause.visible = p
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if p else Input.MOUSE_MODE_HIDDEN
 	if p:
 		AudioManager.duck_music()
 	else:
@@ -85,6 +87,7 @@ func _on_run_ended(victory: bool) -> void:
 
 func _show_over(victory: bool) -> void:
 	GameFeel.reset()
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	over.visible = true
 	over.setup(victory)
 	hud.visible = false
@@ -92,6 +95,7 @@ func _show_over(victory: bool) -> void:
 
 func quit_to_menu() -> void:
 	get_tree().paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_running = false
 	for c in world.get_children():
 		c.queue_free()

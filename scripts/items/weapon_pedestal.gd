@@ -16,6 +16,15 @@ var _in_range: bool = false
 func _ready() -> void:
 	collision_layer = 0
 	collision_mask = 2
+	var solid := StaticBody2D.new()
+	solid.collision_layer = 1
+	solid.collision_mask = 0
+	var col := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(16, 10)
+	col.shape = rect
+	solid.add_child(col)
+	add_child(solid)
 	body_entered.connect(func(b): if b.is_in_group("player"): _in_range = true)
 	body_exited.connect(func(b): if b.is_in_group("player"): _in_range = false)
 	_refresh()

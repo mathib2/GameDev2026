@@ -40,6 +40,10 @@ func _ready() -> void:
 		_weapon_icon.texture = w.icon if w != null else null
 		_weapon_icon.tooltip_text = w.display_name if w != null else "")
 
+	# aiming reticle, drawn above everything else on the HUD
+	var crosshair: Control = load("res://scripts/ui/crosshair.gd").new()
+	$Root.add_child(crosshair)
+
 	EventBus.room_cleared.connect(_on_room_cleared)
 	EventBus.boss_phase_changed.connect(func(p: int) -> void:
 		_boss_fill.color = Color(1, 0.55, 0.25) if p == 2 else Color(1, 0.3, 0.3))

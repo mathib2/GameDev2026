@@ -259,11 +259,15 @@ func _update_anim() -> void:
 		return
 	if anim.current == &"attack" and not anim.is_finished():
 		return
+	# let one-shot reactions finish instead of stomping them next frame
 	if anim.current == &"hurt" and not anim.is_finished():
+		return
+	if anim.current == &"attack" and not anim.is_finished():
 		return
 	if velocity.length() > 8.0:
 		anim.play(&"walk")
-		anim.flip_h = velocity.x < 0.0
+		if absf(velocity.x) > 1.0:
+			anim.flip_h = velocity.x < 0.0
 	else:
 		anim.play(&"idle")
 
