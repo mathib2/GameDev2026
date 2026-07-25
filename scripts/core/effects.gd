@@ -102,6 +102,53 @@ func spawn_pop(parent: Node, pos: Vector2, size: float = 2.4) -> void:
 	t.chain().tween_callback(s.queue_free)
 
 
+## Muzzle flash: a bright cone at the barrel, pointing where the shot went.
+##
+## Without this a ranged weapon has no moment of firing at all — the projectile
+## simply exists, a few pixels away, already travelling. The flash is what makes
+## a shot feel like it came *from* you.
+func spawn_muzzle(parent: Node, pos: Vector2, dir: Vector2,
+		colour: Color = Color(1, 0.94, 0.72), size: float = 1.0) -> void:
+	if parent == null or not is_instance_valid(parent):
+		return
+	var s := Sprite2D.new()
+	s.texture = IMPACT_TEX
+	s.hframes = 4
+	s.frame = 0
+	s.position = pos
+	s.rotation = dir.angle()
+	s.z_index = 50
+	s.modulate = colour
+	s.scale = Vector2(0.9 * size, 0.62 * size)
+	parent.add_child(s)
+	var t := s.create_tween()
+	t.set_parallel(true)
+	t.tween_property(s, "scale", Vector2(1.5 * size, 0.28 * size), 0.09)
+	t.tween_property(s, "modulate:a", 0.0, 0.11)
+	t.chain().tween_callback(s.queue_free)
+
+	# a couple of sparks kicked back out of the barrel
+	var p := CPUParticles2D.new()
+	p.position = pos
+	p.emitting = true
+	p.one_shot = true
+	p.explosiveness = 1.0
+	p.amount = 4
+	p.lifetime = 0.22
+	p.direction = dir
+	p.spread = 26.0
+	p.initial_velocity_min = 60.0
+	p.initial_velocity_max = 150.0
+	p.gravity = Vector2(0, 120)
+	p.scale_amount_min = 1.0
+	p.scale_amount_max = 2.0
+	p.color = colour
+	parent.add_child(p)
+	var t2 := p.create_tween()
+	t2.tween_interval(0.6)
+	t2.tween_callback(p.queue_free)
+
+
 func spawn_impact(parent: Node, pos: Vector2) -> void:
 	if parent == null or not is_instance_valid(parent):
 		return

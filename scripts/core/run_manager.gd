@@ -59,6 +59,26 @@ func start_run() -> void:
 	_run_active = true
 	EventBus.run_started.emit()
 	_enter_floor(0)
+	_place_starter_weapon()
+
+
+## Puts one gun on a pedestal in the room the run starts in.
+##
+## The run begins with fists, and every other weapon was gated behind a
+## treasure room, a boss payout or a gold chest — so a short session could end
+## having never learned that ranged weapons exist at all. This teaches the
+## pedestal and the gun inside ten seconds.
+##
+## It lives here rather than in Room.populate() because FloorGenerator marks the
+## start room `spawned = true` up front, so populate() returns early for it and
+## any spawn case added there is silently dead code.
+func _place_starter_weapon() -> void:
+	if current_room == null or not is_instance_valid(current_room):
+		return
+	if not current_room.has_method("_spawn_weapon_pedestal"):
+		return
+	current_room._spawn_weapon_pedestal(
+		Vector2(current_room.W * 0.5, current_room.H * 0.5 - 62))
 
 
 func _enter_floor(index: int) -> void:

@@ -13,7 +13,7 @@ const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 @export var base_health: float = 220.0
 var floor_index: int = 0
 
-enum State { INTRO, IDLE, SLAM, BARRAGE, SUMMON, CHARGE, DEAD }
+enum State { INTRO, IDLE, SLAM, BARRAGE, SUMMON, CHARGE, SWEEP, DEAD }
 
 var state: State = State.INTRO
 var phase: int = 1
@@ -117,6 +117,11 @@ func _act(delta: float) -> void:
 			if _timer <= 0.0:
 				_do_summon()
 
+		State.SWEEP:
+			velocity = velocity.move_toward(Vector2.ZERO, 600.0 * delta)
+			if _timer <= 0.0:
+				_do_sweep()
+
 		State.CHARGE:
 			if _timer > 0.0:
 				# telegraph: pull back, tracking slowly
@@ -128,14 +133,37 @@ func _act(delta: float) -> void:
 					_end_attack(1.0)
 
 
+## Aim where the player will be, not where they are.
+##
+## Every boss shot used to fly at the player's current position, so walking in
+## a straight line dodged the entire fight. Deliberately under-corrected (0.7)
+## so strafing still beats it — the goal is to punish standing still, not to
+## make movement pointless.
+func _lead(speed: float) -> Vector2:
+	if player == null or not is_instance_valid(player):
+		return Vector2.DOWN
+	var to: Vector2 = player.global_position - global_position
+	var pv: Vector2 = player.get("velocity") if player.get("velocity") != null else Vector2.ZERO
+	if speed <= 1.0:
+		return to.normalized()
+	return (to + pv * (to.length() / speed) * 0.7).normalized()
+
+
 func _choose_attack(dist: float) -> void:
 	var options := ["slam", "barrage"]
 	if phase >= 2:
 		options.append("summon")
 		options.append("charge")
+		options.append("sweep")
 	if phase >= 3:
 		options.append("barrage")
 		options.append("charge")
+		options.append("sweep")
+	# camping the far corner beat the whole fight: at range he closes with a
+	# charge or reaches you with a sweep rather than milling about
+	if dist > 210.0:
+		options.append("charge")
+		options.append("sweep")
 	var pick: String = options[randi() % options.size()]
 	match pick:
 		"slam":
@@ -149,6 +177,8 @@ func _choose_attack(dist: float) -> void:
 			_charge_dir = (player.global_position - global_position).normalized() \
 				if player != null else Vector2.RIGHT
 			anim.play(&"attack", true)
+		"sweep":
+			state = State.SWEEP; _timer = 0.6; anim.play(&"attack", true)
 
 
 func _do_slam() -> void:
@@ -165,13 +195,72 @@ func _do_slam() -> void:
 
 func _do_barrage() -> void:
 	AudioManager.play_sfx(sfx_squeak, 0.1, 0.0)
-	var dir := Vector2.DOWN
-	if player != null:
-		dir = (player.global_position - global_position).normalized()
+	var dir := _lead(150.0)
 	for i in 5:
 		_shoot(dir.rotated(deg_to_rad(lerp(-26.0, 26.0, i / 4.0))), 150.0)
 	EventBus.screen_shake.emit(2.5, 0.15)
 	_end_attack(0.75 if phase >= 3 else 1.0)
+
+
+## A wall of shots crossing the whole room, with one gap in it.
+##
+## This is the anti-camping answer the fight was missing: slam and barrage are
+## both dodged by simply standing far away in a corner, but a wall has to be
+## walked through. The gap is placed away from the player, so it demands a
+## commitment to move rather than being a free hit — "clear telegraph, punish
+## the mistake", which is the whole point of the pattern.
+func _do_sweep() -> void:
+	AudioManager.play_sfx(sfx_slam, 0.05, 0.0)
+	EventBus.screen_shake.emit(5.0, 0.3)
+	var r: Node = get_parent()
+	if r == null or not r.has_method("room_rect"):
+		_end_attack(1.0)
+		return
+	var rect: Rect2 = r.room_rect()
+
+	# horizontal wall if the player is above/below us, vertical otherwise
+	var to := Vector2.ZERO
+	if player != null:
+		to = player.global_position - global_position
+	var vertical := absf(to.x) > absf(to.y)
+
+	var slots := 11
+	var gap := randi() % slots
+	if player != null:
+		# put the gap somewhere that is NOT where the player already stands
+		var along: float = (player.global_position.y - rect.position.y) / rect.size.y \
+			if vertical else (player.global_position.x - rect.position.x) / rect.size.x
+		var here := clampi(int(along * float(slots)), 0, slots - 1)
+		gap = (here + slots / 2 + (randi() % 3) - 1) % slots
+
+	# Spawn inside the playable floor, not on the wall tiles: projectiles
+	# collide with layer 1 now, so a shot born in the wall dies instantly.
+	const INSET := 40.0
+	var inner := Rect2(rect.position + Vector2(INSET, INSET),
+		rect.size - Vector2(INSET * 2.0, INSET * 2.0))
+
+	for i in slots:
+		if i == gap or i == gap + 1:
+			continue
+		var t := (float(i) + 0.5) / float(slots)
+		var from: Vector2
+		var dir: Vector2
+		if vertical:
+			var go_right := to.x > 0.0
+			from = Vector2(inner.position.x if go_right else inner.end.x,
+				inner.position.y + inner.size.y * t)
+			dir = Vector2.RIGHT if go_right else Vector2.LEFT
+		else:
+			var go_down := to.y > 0.0
+			from = Vector2(inner.position.x + inner.size.x * t,
+				inner.position.y if go_down else inner.end.y)
+			dir = Vector2.DOWN if go_down else Vector2.UP
+		var p := PROJECTILE.instantiate()
+		get_parent().add_child(p)
+		p.global_position = from
+		p.setup(null, dir * (95.0 + 12.0 * float(phase)), 1.0, false, 900.0, 0, false)
+	EventBus.toast.emit("GET BEHIND SOMETHING", Color(1, 0.7, 0.55))
+	_end_attack(1.5)
 
 
 func _do_summon() -> void:

@@ -25,6 +25,8 @@ var _home: Vector2
 var _charge_dir: Vector2 = Vector2.RIGHT
 var _hop_vel: Vector2 = Vector2.ZERO
 var _telegraph: Line2D = null
+## Fixed per enemy: which way this one arcs when closing. See CHASER.
+var _flank: float = 0.0
 ## Champion variants (set by the room): tinted, tougher, always pay out.
 var champion: bool = false
 
@@ -42,6 +44,8 @@ func _ready() -> void:
 	_cooldown = randf() * 1.5
 	_idle_noise = randf_range(3.0, 9.0)
 	_dir = Vector2.from_angle(randf() * TAU)
+	# signed so roughly half a pack swings left and half right
+	_flank = deg_to_rad(randf_range(28.0, 62.0)) * (1.0 if randf() < 0.5 else -1.0)
 
 	if data == null:
 		push_warning("[Enemy] %s has no EnemyData" % name)
@@ -85,11 +89,64 @@ func _physics_process(delta: float) -> void:
 
 	_think(delta)
 
+	# Steering, applied after the archetype has decided where it wants to go.
+	# Without it every chaser walks the same straight line to the player and
+	# the pack collapses into one stacked blob you can kill with a single
+	# sweep — which is most of why fights read as easy. Separation makes them
+	# fan out and surround instead.
+	if not _holds_position():
+		velocity += _separation() * SEPARATION_FORCE
+
 	velocity += _knockback
 	_knockback = _knockback.move_toward(Vector2.ZERO, 1400.0 * delta)
 	move_and_slide()
 	_touch_player()
 	_update_anim()
+
+
+const SEPARATION_RADIUS := 34.0
+const SEPARATION_FORCE := 46.0
+
+
+## Archetypes that are supposed to stand still stay standing still — shoving a
+## stationary turret around would break the read that it is a fixed hazard.
+func _holds_position() -> bool:
+	return data != null and data.behaviour in [
+		EnemyData.Behaviour.SHOCKWAVE, EnemyData.Behaviour.BUILDER]
+
+
+## Average push away from crowded neighbours, strongest when nearly overlapping.
+func _separation() -> Vector2:
+	var push := Vector2.ZERO
+	var n := 0
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if e == self or not is_instance_valid(e):
+			continue
+		if e.get("is_dead") == true:
+			continue
+		var d: Vector2 = global_position - e.global_position
+		var dist := d.length()
+		if dist > 0.01 and dist < SEPARATION_RADIUS:
+			push += (d / dist) * (1.0 - dist / SEPARATION_RADIUS)
+			n += 1
+	return push / float(n) if n > 0 else Vector2.ZERO
+
+
+## Where to aim so a shot and a moving player arrive together.
+##
+## First-order lead: good enough that standing still and strafing predictably
+## gets punished, and cheap enough to run on every shooter every volley. The
+## 0.75 factor keeps it deliberately imperfect — a perfect predictor is
+## unfun, because it removes strafing as a skill instead of testing it.
+func _lead_target(shot_speed: float) -> Vector2:
+	if player == null or not is_instance_valid(player):
+		return Vector2.DOWN
+	var to: Vector2 = player.global_position - global_position
+	var pv: Vector2 = player.get("velocity") if player.get("velocity") != null else Vector2.ZERO
+	if shot_speed <= 1.0:
+		return to.normalized()
+	var t := to.length() / shot_speed
+	return (to + pv * t * 0.75).normalized()
 
 
 func _think(delta: float) -> void:
@@ -103,7 +160,12 @@ func _think(delta: float) -> void:
 
 	match data.behaviour:
 		EnemyData.Behaviour.CHASER:
-			velocity = dir * spd
+			# Arc in rather than walking the straight line. The bias is fixed
+			# per enemy and unwinds as it closes, so a pack approaches from a
+			# spread of angles and converges only at the end — you cannot back
+			# up and hold them all off with one arc of swings.
+			var bias: float = _flank * clampf(dist / 220.0, 0.0, 1.0)
+			velocity = dir.rotated(bias) * spd
 
 		EnemyData.Behaviour.SPRINTER:
 			# bursts then twitches — reads as manic
@@ -131,7 +193,7 @@ func _think(delta: float) -> void:
 				velocity = velocity.move_toward(Vector2.ZERO, 400.0 * delta)
 			if _cooldown <= 0.0 and dist < data.attack_range * 1.1:
 				_cooldown = data.attack_cooldown
-				_fire_spread(dir, 1, 0.0)
+				_fire_spread(_lead_target(data.projectile_speed), 1, 0.0)
 				_attack_anim()
 
 		EnemyData.Behaviour.SHOCKWAVE:
@@ -196,7 +258,7 @@ func _think(delta: float) -> void:
 			velocity = Vector2.ZERO
 			if _cooldown <= 0.0 and dist < data.attack_range:
 				_cooldown = data.attack_cooldown
-				_fire_spread(dir, 3, 40.0)
+				_fire_spread(_lead_target(data.projectile_speed), 3, 40.0)
 				_attack_anim()
 
 

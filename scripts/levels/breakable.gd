@@ -50,9 +50,36 @@ func take_damage(amount: float, _from: Vector2 = Vector2.ZERO,
 		_break()
 
 
+## What a smashed crate can cough up.
+##
+## The rare tail is deliberately thin: a crate that hands out a weapon one time
+## in forty is a small thrill every time it happens, while one that does it
+## every fifth crate would make the treasure room pointless. The common cases
+## still dominate — most crates give you nothing, which is what makes the good
+## ones register at all.
+const DROPS := [
+	{"kind": "weapon", "chance": 0.025},
+	{"kind": "item",   "chance": 0.020},
+	{"kind": "skill",  "chance": 0.015},
+	{"kind": "heart",  "chance": 0.070},
+	{"kind": "coin",   "chance": 0.340},
+]
+
+
 func _break() -> void:
 	Effects.spawn_burst(get_parent(), global_position, Color(0.62, 0.45, 0.28), 12, 110.0, 3.0)
 	var room := get_parent()
-	if room != null and room.has_method("spawn_pickup") and randf() < 0.35:
-		room.spawn_pickup("coin", global_position)
+	if room != null and is_instance_valid(room) and room.has_method("spawn_crate_drop"):
+		var roll := randf()
+		var acc := 0.0
+		for d in DROPS:
+			acc += float(d["chance"])
+			if roll < acc:
+				# Deferred because this runs from a melee sweep or a projectile
+				# hit, both mid-physics — and deferred *on the room*, not on
+				# self: this crate is about to queue_free(), and Godot silently
+				# drops deferred calls to a freed object, so the reward would
+				# vanish exactly when it mattered.
+				room.spawn_crate_drop.call_deferred(String(d["kind"]), global_position)
+				break
 	queue_free()

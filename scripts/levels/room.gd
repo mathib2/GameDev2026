@@ -280,9 +280,9 @@ func populate(floor_index: int) -> void:
 			# Sometimes the treasure is a whole new weapon, sometimes a chest
 			# you have to walk into to find out what is in it.
 			var roll := _rng.randf()
-			if roll < 0.3:
+			if roll < 0.45:
 				_spawn_weapon_pedestal(Vector2(W * 0.5, H * 0.5))
-			elif roll < 0.55:
+			elif roll < 0.65:
 				_spawn_chest(Vector2(W * 0.5, H * 0.5), true, 0)
 			else:
 				_spawn_pedestal()
@@ -323,15 +323,21 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 		e.data = data
 		add_child(e)
 		e.global_position = pos
+		# Depth scaling. Without this a Toy Factory toy had exactly the same
+		# health as a Nursery one and only the *count* rose, so later floors got
+		# longer rather than harder — and the player's items and skills had
+		# outgrown them by floor two.
+		var depth := 1.0 + 0.18 * float(floor_index)
+		e.health = data.max_health * depth
 		if difficulty > 1.2:
 			e.scale = Vector2(1.25, 1.25)
-			e.health = data.max_health * 1.9
+			e.health = data.max_health * 1.9 * depth
 		elif _rng.randf() < 0.08 + 0.03 * floor_index:
 			# champion variant: tinted, tougher, always pays out a coin
 			e.champion = true
 			e.modulate = Color(1.3, 0.75, 0.8)
 			e.scale = Vector2(1.18, 1.18)
-			e.health = data.max_health * 1.9
+			e.health = data.max_health * 1.9 * depth
 		placed += 1
 	alive_enemies = placed
 	if placed == 0:
@@ -356,8 +362,9 @@ func _spawn_pedestal(pos: Vector2 = Vector2(W * 0.5, H * 0.5)) -> void:
 	var p := ITEM_PEDESTAL.instantiate()
 	# fields before add_child: _ready() is what paints the icon and label
 	p.item = item
-	add_child(p)
-	p.global_position = pos
+	p.position = pos
+	# mark_cleared() and _boss_payout() both run from enemy_died, mid-physics
+	add_child.call_deferred(p)
 
 
 func _spawn_weapon_pedestal(pos: Vector2, price: int = 0) -> void:
@@ -368,8 +375,8 @@ func _spawn_weapon_pedestal(pos: Vector2, price: int = 0) -> void:
 	var p := WEAPON_PEDESTAL.instantiate()
 	p.weapon = w
 	p.price = price
-	add_child(p)
-	p.global_position = pos
+	p.position = pos
+	add_child.call_deferred(p)
 
 
 ## Wooden chests are free consumables; gold ones cost coins and pay out
@@ -419,11 +426,45 @@ func _spawn_shrine(pos: Vector2, id: StringName) -> void:
 	add_child.call_deferred(s)
 
 
+## Pays out whatever a smashed crate rolled. Lives here rather than on the
+## crate because the crate frees itself the moment it breaks — see breakable.gd.
+func spawn_crate_drop(kind: String, pos: Vector2) -> void:
+	match kind:
+		"coin", "heart":
+			spawn_pickup(kind, pos)
+		"weapon":
+			_spawn_weapon_pedestal(pos)
+			_announce_drop("SOMETHING WAS IN THERE", Color(0.7, 0.9, 1.0), pos)
+		"item":
+			_spawn_pedestal(pos)
+			_announce_drop("SOMETHING WAS IN THERE", Color(1, 0.9, 0.4), pos)
+		"skill":
+			var id := GameState.random_unmaxed_skill()
+			if id != &"" and GameState.grant_skill(id):
+				var def: Dictionary = GameState.SKILLS.get(id, {})
+				_announce_drop("%s %d" % [def.get("name", "SKILL"),
+					GameState.skill_level(id)], Color(0.6, 1.0, 0.7), pos)
+			else:
+				spawn_pickup("coin", pos)   # every skill maxed: pay out instead
+
+
+func _announce_drop(text: String, colour: Color, pos: Vector2) -> void:
+	EventBus.toast.emit(text, colour)
+	EventBus.screen_shake.emit(3.0, 0.2)
+	Effects.spawn_pop(self, pos, 2.4)
+
+
 func spawn_pickup(kind: String, pos: Vector2) -> void:
 	var p := PICKUP_SCENE.instantiate()
-	add_child(p)
-	p.global_position = pos
+	# Fields BEFORE the node enters the tree. Pickup._ready() chooses its
+	# texture from `kind` and caches position.y for the bob, so assigning them
+	# after add_child() meant every heart drew the coin sprite (it still healed
+	# — it just lied about what it was).
 	p.kind = kind
+	p.position = pos
+	# Deferred because loot drops from enemy._die(), which runs inside the
+	# physics flush whenever the killing blow came from a projectile.
+	add_child.call_deferred(p)
 
 
 # ── clearing ──────────────────────────────────────────────────────────────

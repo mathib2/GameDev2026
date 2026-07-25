@@ -136,6 +136,14 @@ func upgrade_skill(id: StringName) -> bool:
 	var cost := skill_cost(id)
 	if coins < cost or not spend(cost):
 		return false
+	return grant_skill(id)
+
+
+## Adds a level without charging for it — what a lucky crate hands out.
+## Returns false if the skill is unknown or already maxed.
+func grant_skill(id: StringName) -> bool:
+	if not SKILLS.has(id) or skill_maxed(id):
+		return false
 	skills[id] = skill_level(id) + 1
 	var before := max_health()
 	_recompute()
@@ -146,6 +154,17 @@ func upgrade_skill(id: StringName) -> bool:
 		health = mini(max_health(), health + gained)
 		EventBus.player_healed.emit(health, max_health())
 	return true
+
+
+## A skill the player has not maxed yet, or &"" if they all are.
+func random_unmaxed_skill() -> StringName:
+	var pool: Array = []
+	for id in SKILLS:
+		if not skill_maxed(id):
+			pool.append(id)
+	if pool.is_empty():
+		return &""
+	return pool[randi() % pool.size()]
 
 
 func max_health() -> int:

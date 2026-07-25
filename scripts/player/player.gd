@@ -164,6 +164,9 @@ func _shoot(w: WeaponData) -> void:
 		p.setup(w.projectile_texture, dir * w.projectile_speed, dmg, true,
 			w.projectile_range, w.pierce, crit)
 		p.knockback = w.knockback * GameState.stat("knockback_mult")
+	# one flash for the whole volley, aimed down the middle of the spread
+	Effects.spawn_muzzle(get_parent(), global_position + aim * 13.0, aim,
+		Color(1, 0.94, 0.72), 1.0 + w.shake * 0.06)
 	EventBus.screen_shake.emit(w.shake * 0.5, 0.1)
 
 

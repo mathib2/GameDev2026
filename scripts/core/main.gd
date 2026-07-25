@@ -42,6 +42,8 @@ func _ready() -> void:
 		add_child(load("res://scripts/dev/walk_test.gd").new())
 	if OS.get_cmdline_args().has("--screenshot"):
 		add_child(load("res://scripts/dev/screenshot.gd").new())
+	if OS.get_cmdline_args().has("--genaudit"):
+		add_child(load("res://scripts/dev/gen_audit.gd").new())
 
 
 func _unhandled_input(event: InputEvent) -> void:

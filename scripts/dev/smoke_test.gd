@@ -34,7 +34,16 @@ func _ready() -> void:
 	EventBus.player_died.connect(func(): print("[SMOKE] player died (expected: they take contact damage)"))
 
 
-func _process(delta: float) -> void:
+## Runs in the PHYSICS step, not idle, and that is load-bearing.
+##
+## This test kills enemies by calling take_damage() directly. Doing that from
+## _process() meant every death — and so every loot drop, room clear and boss
+## payout — happened at idle, while in the real game the killing blow arrives
+## from a projectile's body_entered, i.e. inside a physics flush. Adding a node
+## there is an error; adding one at idle is not. So a whole class of
+## "Can't change this state while flushing queries" bug was invisible to CI and
+## only appeared when a human actually shot something.
+func _physics_process(delta: float) -> void:
 	_elapsed += delta
 	# hard time budget so the test always reports instead of exploring forever.
 	# Scales with the floor count — a four-floor run needs roughly twice the
