@@ -256,10 +256,25 @@ func _scatter_random() -> void:
 
 
 func _spawn_crate(pos: Vector2) -> void:
+	# a crate smashed on a previous visit stays smashed
+	if info != null and info.broken_crates.has(crate_key(pos)):
+		return
 	var crate := preload("res://scripts/levels/breakable.gd").new()
 	crate.position = pos
 	crate.z_index = 1
 	add_child(crate)
+
+
+## Stable id for a crate slot. Rounded, because the position round-trips
+## through float maths on every rebuild.
+func crate_key(pos: Vector2) -> String:
+	return "%d,%d" % [roundi(pos.x), roundi(pos.y)]
+
+
+## Called by a crate as it breaks, so it does not come back on re-entry.
+func forget_crate(pos: Vector2) -> void:
+	if info != null:
+		info.broken_crates[crate_key(pos)] = true
 
 
 # ── population ────────────────────────────────────────────────────────────

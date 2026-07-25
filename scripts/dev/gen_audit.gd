@@ -62,6 +62,31 @@ func _run() -> void:
 		% [total_missing_shop, _runs * RunManager.total_floors()])
 
 	# How many weapons does a run actually get offered? Model the drop sites.
+	# Regression guard. Treasure and shop rooms used to be marked
+	# `spawned = true` at generation, which is the flag Room.populate() reads
+	# to decide it has already filled the room — so they returned early on the
+	# first visit and were permanently empty. Every shop in the game was a bare
+	# room, and nothing caught it because the smoke test never looks inside one.
+	var bad := 0
+	var checked := 0
+	for fi in RunManager.total_floors():
+		for i in 60:
+			var g := FloorGenerator.new()
+			g.generate(fi, rng)
+			for r in g.order:
+				if r.kind in [FloorGenerator.RoomKind.SHOP,
+						FloorGenerator.RoomKind.TREASURE,
+						FloorGenerator.RoomKind.SECRET]:
+					checked += 1
+					if r.spawned:
+						bad += 1
+	if bad > 0:
+		printerr("[AUDIT] FAIL: %d of %d special rooms pre-marked spawned "
+			% [bad, checked] + "(they will populate as empty)")
+	else:
+		print("\n[AUDIT] %d special rooms, none pre-marked spawned — they fill"
+			% checked)
+
 	print("\n[AUDIT] weapons in ContentDB: %d" % ContentDB.weapons.size())
 	var got := 0
 	for i in _runs:

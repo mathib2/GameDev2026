@@ -22,4 +22,3 @@ mode = 1
 
 [node name="GameOver" parent="Menus" unique_id=661404366 instance=ExtResource("3_menu")]
 visible = false
-mode = 2

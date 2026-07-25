@@ -24,7 +24,8 @@ func _ready() -> void:
 		b.mouse_entered.connect(func() -> void: AudioManager.play_sfx(sfx_select, 0.05, -6.0))
 	match mode:
 		Mode.MAIN:
-			_title.text = "STUFFED"
+			_dress_main_menu()
+			_title.text = ""          # the logo image carries the name now
 			_subtitle.text = "they were always going to come apart"
 			if SaveManager.runs > 0:
 				_subtitle.text += "\nbest: floor %d · %d toys torn open lifetime" % [
@@ -41,6 +42,72 @@ func _ready() -> void:
 		Mode.GAME_OVER:
 			_primary.text = "RUN IT BACK"
 			_secondary.text = "MAIN MENU"
+
+
+## Turns the plain dark panel into the paper-and-pinned-note main menu.
+##
+## Only the MAIN mode gets this. Pause and game-over share this scene, and they
+## are drawn over live gameplay where a full-bleed opaque backdrop would be
+## wrong — they stay as the dim overlay they were.
+##
+## Built in code so Menu.tscn keeps working unchanged for the other two modes.
+func _dress_main_menu() -> void:
+	var dim: ColorRect = $Dim
+	dim.color = Color(0, 0, 0, 0)      # the paper is the background now
+
+	var bg := TextureRect.new()
+	bg.texture = load("res://assets/ui/menu_bg.png")
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(bg)
+	move_child(bg, 0)                  # behind every other child
+
+	var logo := TextureRect.new()
+	logo.texture = load("res://assets/ui/menu_logo.png")
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	logo.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	logo.offset_left = 56
+	logo.offset_right = -56
+	logo.offset_top = 10
+	logo.offset_bottom = 96
+	add_child(logo)
+	move_child(logo, 1)
+
+	# the note sits behind the buttons; the CenterContainer centres both
+	var note := TextureRect.new()
+	note.texture = load("res://assets/ui/menu_note.png")
+	note.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+	note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	note.set_anchors_preset(Control.PRESET_FULL_RECT)
+	note.offset_top = 104
+	add_child(note)
+	move_child(note, 2)
+
+	var vbox: VBoxContainer = $Panel/VBox
+	vbox.add_theme_constant_override("separation", 2)
+	$Panel.offset_top = 112
+
+	_style_paper(_subtitle, 9, Color(0.42, 0.40, 0.44))
+	for b in [_primary, _secondary]:
+		_style_paper(b, 13, Color(0.24, 0.23, 0.28))
+		b.custom_minimum_size = Vector2(180, 22)
+		b.flat = true
+
+
+## Menu text on paper: dark ink, no button chrome, and a light hover tint —
+## the reference has no boxes around anything, just words on the page.
+func _style_paper(c: Control, size: int, colour: Color) -> void:
+	c.add_theme_font_size_override("font_size", size)
+	for state in ["font_color", "font_hover_color", "font_pressed_color",
+			"font_focus_color"]:
+		c.add_theme_color_override(state,
+			colour.lightened(0.35) if state == "font_hover_color" else colour)
+	if c is Button:
+		var empty := StyleBoxEmpty.new()
+		for s in ["normal", "hover", "pressed", "focus", "disabled"]:
+			c.add_theme_stylebox_override(s, empty)
 
 
 func _add_volume_controls() -> void:

@@ -69,6 +69,10 @@ const DROPS := [
 func _break() -> void:
 	Effects.spawn_burst(get_parent(), global_position, Color(0.62, 0.45, 0.28), 12, 110.0, 3.0)
 	var room := get_parent()
+	if room != null and is_instance_valid(room) and room.has_method("forget_crate"):
+		# record the death before we free ourselves, or the room rebuilds this
+		# crate the next time the player walks back in
+		room.forget_crate(position)
 	if room != null and is_instance_valid(room) and room.has_method("spawn_crate_drop"):
 		var roll := randf()
 		var acc := 0.0

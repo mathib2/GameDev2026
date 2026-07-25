@@ -22,6 +22,14 @@ class RoomInfo:
 	var visited: bool = false
 	var spawned: bool = false
 	var seed_value: int = 0
+	## Crates already smashed here, keyed "x,y".
+	##
+	## Room.build() re-runs every single time you walk back in, and the decor
+	## layout is seeded so it rebuilds identically — which meant leaving a room
+	## and returning restored every crate, and crates drop coins and loot. That
+	## is an infinite farm. Survives here because RoomInfo outlives the Room
+	## node, which is freed on travel.
+	var broken_crates: Dictionary = {}
 
 	func _init(x: int, y: int) -> void:
 		gx = x; gy = y
@@ -117,8 +125,15 @@ func _assign_special(floor_index: int, rng: RandomNumberGenerator) -> void:
 		var pick: RoomInfo = remaining.pop_back()
 		pick.kind = kind
 		if kind != RoomKind.SECRET:
+			# `cleared` only means "no fight here, doors stay open".
+			#
+			# This used to also set `spawned = true`, which is what Room.
+			# populate() checks to decide whether it has already filled the
+			# room — so treasure and shop rooms returned early on their very
+			# first visit and were permanently, silently empty. Every shop in
+			# the game was a bare room. populate() sets `spawned` itself once
+			# it has actually spawned something.
 			pick.cleared = true
-			pick.spawned = true
 
 	# a couple of elite rooms on deeper floors, chosen from ordinary combat rooms
 	var elites := 0 if floor_index == 0 else (1 if floor_index < 3 else 2)

@@ -58,13 +58,22 @@ func _ready() -> void:
 	EventBus.boss_spawned.connect(_on_boss_spawned)
 	EventBus.boss_health_changed.connect(_on_boss_health)
 	EventBus.boss_defeated.connect(func(_b): _boss_bar.visible = false)
+	# The bar was only ever hidden by killing the boss, so dying to one left it
+	# stuck on screen through the death screen and into the next run.
+	EventBus.player_died.connect(func(): _boss_bar.visible = false)
+	EventBus.run_ended.connect(func(_v: bool): _boss_bar.visible = false)
 	EventBus.boss_intro_started.connect(_on_intro)
 	EventBus.minimap_dirty.connect(func(): _minimap.queue_redraw())
 	_build_extras()
 	EventBus.stat_changed.connect(_refresh_skills)
 	EventBus.weapon_equipped.connect(func(w: WeaponData) -> void:
 		_weapon_name.text = w.display_name.to_upper() if w != null else "")
-	EventBus.run_started.connect(func(): _rebuild_hearts(); _coins.text = "0 ¢")
+	EventBus.run_started.connect(func():
+		_rebuild_hearts()
+		_coins.text = "0 ¢"
+		# belt and braces: a fresh run always starts with a clean HUD
+		_boss_bar.visible = false
+		_intro.visible = false)
 
 	_minimap.draw.connect(_draw_minimap)
 	_rebuild_hearts()

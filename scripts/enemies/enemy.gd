@@ -100,6 +100,7 @@ func _physics_process(delta: float) -> void:
 	velocity += _knockback
 	_knockback = _knockback.move_toward(Vector2.ZERO, 1400.0 * delta)
 	move_and_slide()
+	_clamp_to_room()
 	_touch_player()
 	_update_anim()
 
@@ -355,6 +356,36 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO,
 		_knockback += push * (1.0 - clampf(data.knockback_resist, 0.0, 0.95))
 	if health <= 0.0:
 		_die()
+
+
+## Keep enemies inside the room.
+##
+## Walls are solid, but the doorways are literal gaps in them — so anything
+## that wandered into a door lane simply walked out of the room and kept going,
+## and the room could never be cleared. Bosses already clamped themselves;
+## ordinary enemies did not. Also unsticks anything the separation push has
+## wedged into a corner.
+func _clamp_to_room() -> void:
+	var r: Node = get_parent()
+	if r == null or not r.has_method("room_rect"):
+		return
+	var rect: Rect2 = r.room_rect()
+	var margin := 26.0 + (data.hit_radius if data != null else 10.0)
+	var before := global_position
+	global_position.x = clampf(global_position.x, rect.position.x + margin,
+		rect.position.x + rect.size.x - margin)
+	global_position.y = clampf(global_position.y, rect.position.y + margin,
+		rect.position.y + rect.size.y - margin)
+	# If we had to pull it back, kill the velocity component that was driving
+	# it out — otherwise it grinds against the boundary forever, which is what
+	# "stuck in a corner" looks like.
+	if not global_position.is_equal_approx(before):
+		if not is_equal_approx(global_position.x, before.x):
+			velocity.x = 0.0
+			_dir.x = -_dir.x
+		if not is_equal_approx(global_position.y, before.y):
+			velocity.y = 0.0
+			_dir.y = -_dir.y
 
 
 ## How far this body extends from its centre, for melee range checks.
