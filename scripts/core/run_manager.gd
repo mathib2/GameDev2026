@@ -6,8 +6,14 @@ extends Node
 const ROOM_SCENE := preload("res://scenes/rooms/Room.tscn")
 const PLAYER_SCENE := preload("res://scenes/player/Player.tscn")
 
+## Fourteen floors, one boss each. The descent runs from where toys are loved,
+## through where they are stored, to where they are made and unmade — the
+## further down you go the less any of it is about children.
 const FLOOR_NAMES := [
 	"THE NURSERY", "THE PLAYROOM", "THE ATTIC", "THE TOY FACTORY",
+	"THE STOCKROOM", "THE PACKING LINE", "THE SORTING FLOOR",
+	"THE LOST PROPERTY", "THE DOLL WARD", "THE MOULD SHOP",
+	"THE PAINT LINE", "THE FURNACE", "THE QUIET SHELF", "THE LAST BOX",
 ]
 
 var generator: FloorGenerator
@@ -55,6 +61,16 @@ func start_run() -> void:
 	var fists := ContentDB.get_weapon(&"fists")
 	if fists != null:
 		GameState.equip(fists)
+	# Drop the previous run's player.
+	#
+	# _load_room() reuses the existing player whenever the node is still valid,
+	# which is what keeps you alive across rooms — but after a death the corpse
+	# is *also* still valid, so starting a new run re-adopted it: State.DEAD,
+	# death frame, no input. You respawned lying on the floor.
+	if player != null and is_instance_valid(player):
+		player.queue_free()
+	player = null
+
 	_rng.randomize()
 	_run_active = true
 	EventBus.run_started.emit()

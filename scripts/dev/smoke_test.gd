@@ -154,6 +154,20 @@ func _check_skills() -> void:
 	# and the guard: no coins, no level
 	if GameState.upgrade_skill(&"power"):
 		_failures.append("bought a skill level with 0 coins")
+
+	# the breadth cap: fill every slot, then a brand new skill must be refused
+	# however rich the player is
+	GameState.coins = 100000
+	for id in GameState.SKILLS:
+		GameState.upgrade_skill(id)
+	if GameState.skills.size() > GameState.MAX_SKILLS:
+		_failures.append("holds %d skills, cap is %d"
+			% [GameState.skills.size(), GameState.MAX_SKILLS])
+	var spare := GameState.random_unmaxed_skill()
+	if spare != &"" and GameState.skill_level(spare) == 0:
+		_failures.append("a crate could still hand out an unslotted skill")
+	print("[SMOKE] skill cap:     %d held, cap %d"
+		% [GameState.skills.size(), GameState.MAX_SKILLS])
 	print("[SMOKE] skills:        power lvl %d, damage_mult %.2f -> %.2f"
 		% [GameState.skill_level(&"power"), before_dmg,
 		   GameState.stat("damage_mult")])

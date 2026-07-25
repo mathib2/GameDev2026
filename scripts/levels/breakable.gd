@@ -58,11 +58,11 @@ func take_damage(amount: float, _from: Vector2 = Vector2.ZERO,
 ## still dominate — most crates give you nothing, which is what makes the good
 ## ones register at all.
 const DROPS := [
-	{"kind": "weapon", "chance": 0.025},
-	{"kind": "item",   "chance": 0.020},
-	{"kind": "skill",  "chance": 0.015},
-	{"kind": "heart",  "chance": 0.070},
-	{"kind": "coin",   "chance": 0.340},
+	{"kind": "weapon", "chance": 0.012},
+	{"kind": "item",   "chance": 0.009},
+	{"kind": "skill",  "chance": 0.007},
+	{"kind": "heart",  "chance": 0.050},
+	{"kind": "coin",   "chance": 0.300},
 ]
 
 

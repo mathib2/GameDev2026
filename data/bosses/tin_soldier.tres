@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="BossData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/boss_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/bosses/boss_tin_soldier.png" id="2_sheet"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/boss_roar.wav" id="3_intro"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/boss_hurt.wav" id="4_hurt"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/boss_death.wav" id="5_death"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/soldier_shot.wav" id="6_atk"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"tin_soldier"
+display_name = "THE TIN SOLDIER"
+subtitle = "One Leg, No Orders"
+spritesheet = ExtResource("2_sheet")
+sprite_scale = 1.0
+sprite_offset = Vector2(0, -30)
+max_health = 280.0
+hit_radius = 27.0
+contact_damage = 1
+move_speed = 26.0
+movement = 0
+phase1 = Array[int]([1, 5])
+phase2 = Array[int]([3])
+phase3 = Array[int]([2])
+cooldown = 1.1
+projectile_count = 12
+projectile_speed = 130.0
+minion_id = &"soldier"
+tint = Color(0.88, 0.92, 1.0, 1)
+debris = Color(0.82, 0.86, 0.94, 1)
+phase2_line = "THE RANKS CLOSE"
+phase3_line = "HE HOLDS THE LINE"
+defeat_line = "THE TIN SOLDIER IS SCRAP"
+sfx_intro = ExtResource("3_intro")
+sfx_hurt = ExtResource("4_hurt")
+sfx_death = ExtResource("5_death")
+sfx_attack = ExtResource("6_atk")

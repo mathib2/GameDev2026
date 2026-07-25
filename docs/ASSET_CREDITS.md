@@ -10,9 +10,18 @@ exactly one third-party source, recorded below.
 | Asset | Creator | Source | Licence | Used for |
 |---|---|---|---|---|
 | Weapon Pack - FREE (`anim-bullet.png`) | VladPenn | https://vladpenn.itch.io/weapon | *"Feel free to use it in any free/commercial game, if you want to credit me, that would be nice :)"* — free for commercial use, attribution optional (given here) | Silhouettes for the toy weapons, artifacts and projectiles in `assets/items/`, `assets/effects/`, `assets/environment/prop_books.png` |
+| 16x16 RPG Item Pack (72 sprites) | Alex's Assets | https://alexs-assets.itch.io/16x16-rpg-item-pack | **CC0 1.0 Universal** — public domain. Commercial use, modification and redistribution all permitted, attribution not required (credited here anyway, as the author asks) | Artifact and melee-weapon icons in `assets/items/`. Copied unmodified — see `tools/build_item_art.py` for the exact mapping |
 
-The unmodified sheet is kept at `assets/third_party/vladpenn_weapon_pack.png`
-so the derivation is reproducible. **The pack is a modern-military set** — the
+Both packs are kept unmodified under `assets/third_party/` so every derivation
+is reproducible from source.
+
+The RPG item pack is CC0, so its sprites are used as-is. The weapon pack is
+not: it is a modern-military set, and its sprites are repainted by
+`tools/build_weapon_assets.py`, which also *adds* shading the originals never
+had — a top-down light, darkened rim pixels and a specular corner. That last
+part matters because a plain colour swap cannot raise quality: a source with
+three flat tones stays three flat tones through any palette, which is what
+made the earlier icons read as 8-bit. **The pack is a modern-military set** — the
 sprites are recoloured through plastic ramps by
 `tools/build_weapon_assets.py` before use, because a photoreal AK belongs in a
 different game than this one. Shapes are the creator's; palettes are ours.

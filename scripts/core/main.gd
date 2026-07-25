@@ -10,6 +10,7 @@ extends Node
 @onready var over: Control = $Menus/GameOver
 
 var _running: bool = false
+var wiki: CanvasLayer = null    ## the MY STUFF panel; the menu opens it
 
 var music_menu: AudioStream = preload("res://assets/audio/music/09. Treasures Within the Abomination.wav")
 var music_victory: AudioStream = preload("res://assets/audio/music/music_victory.wav")
@@ -22,6 +23,9 @@ func _ready() -> void:
 	# HUD is stated where it is explained
 	add_child(load("res://scripts/ui/vignette.gd").new())
 	add_child(load("res://scripts/ui/story.gd").new())
+	add_child(load("res://scripts/ui/mod_menu.gd").new())
+	wiki = load("res://scripts/ui/wiki.gd").new()
+	add_child(wiki)
 	hud.visible = false
 	pause.visible = false
 	over.visible = false

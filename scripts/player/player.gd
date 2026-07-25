@@ -219,6 +219,8 @@ func _update_anim() -> void:
 func take_damage(amount: int, from: Vector2 = Vector2.ZERO) -> void:
 	if state == State.DEAD or _invuln > 0.0 or state == State.DODGE:
 		return
+	if GameState.godmode:
+		return
 	GameState.damage(amount)
 	if GameState.health <= 0:
 		return

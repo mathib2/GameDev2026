@@ -11,6 +11,7 @@ const DATA_ROOT := "res://data"
 var enemies: Dictionary = {}   ## StringName -> EnemyData
 var weapons: Dictionary = {}   ## StringName -> WeaponData
 var items: Dictionary = {}     ## StringName -> ItemData
+var bosses: Dictionary = {}    ## StringName -> BossData
 
 var _errors: Array[String] = []
 
@@ -20,12 +21,12 @@ func _ready() -> void:
 
 
 func reload() -> void:
-	enemies.clear(); weapons.clear(); items.clear(); _errors.clear()
+	enemies.clear(); weapons.clear(); items.clear(); bosses.clear(); _errors.clear()
 	_scan(DATA_ROOT)
 	for e in _errors:
 		push_warning("[ContentDB] %s" % e)
-	print("[ContentDB] %d enemies, %d weapons, %d items"
-		% [enemies.size(), weapons.size(), items.size()])
+	print("[ContentDB] %d enemies, %d weapons, %d items, %d data-bosses"
+		% [enemies.size(), weapons.size(), items.size(), bosses.size()])
 
 
 func _scan(path: String) -> void:
@@ -71,6 +72,7 @@ func _index(path: String) -> void:
 	if res is EnemyData: bucket = enemies
 	elif res is WeaponData: bucket = weapons
 	elif res is ItemData: bucket = items
+	elif res is BossData: bucket = bosses
 	else:
 		_errors.append("%s has an unrecognised type; skipped" % path)
 		return

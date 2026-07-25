@@ -30,7 +30,32 @@ func _ready() -> void:
 		elif args[i] == "--shot-gap" and i + 1 < args.size():
 			_gap = float(args[i + 1])
 	_next = _delay
+	# --shot-wiki opens the MY STUFF panel before capturing. Screenshots cannot
+	# press keys, and a panel that only opens on F2 is otherwise unverifiable
+	# without a human.
+	if args.has("--shot-wiki"):
+		_open_wiki.call_deferred()
+	if args.has("--shot-mod"):
+		_open_mod.call_deferred()
 	print("[SHOT] writing %d frames to %s" % [_count, OS.get_user_data_dir()])
+
+
+func _open_wiki() -> void:
+	var main := get_parent()
+	if main != null and main.get("wiki") != null:
+		main.wiki.toggle()
+
+
+## The mod panel only opens on F1, and a screenshot cannot press keys.
+func _open_mod() -> void:
+	for n in get_parent().get_children():
+		if n.get_script() == null:
+			continue
+		if String(n.get_script().resource_path).ends_with("mod_menu.gd"):
+			for c in n.get_children():
+				if c is PanelContainer:
+					c.visible = true
+			return
 
 
 func _process(delta: float) -> void:

@@ -86,6 +86,12 @@ func _refresh() -> void:
 		_sub.text = "MAXED"
 		_sub.add_theme_color_override("font_color", Color(0.75, 0.75, 0.8))
 		_sprite.frame = 1
+	elif GameState.skill_blocked(skill_id):
+		# say *why* it cannot be bought — a shrine that silently refuses reads
+		# as a bug rather than a rule
+		_sub.text = "NO SLOTS (%d/%d)" % [GameState.skills.size(), GameState.MAX_SKILLS]
+		_sub.add_theme_color_override("font_color", Color(0.85, 0.55, 0.5))
+		_sprite.modulate = Color(0.45, 0.45, 0.5)
 	else:
 		_sub.text = "%d COINS — %s" % [GameState.skill_cost(skill_id),
 			def.get("blurb", "")]
@@ -98,6 +104,11 @@ func _on_entered(body: Node) -> void:
 	_armed = false
 	if GameState.skill_maxed(skill_id):
 		AudioManager.play_sfx(sfx_deny, 0.0, -6.0)
+		return
+	if GameState.skill_blocked(skill_id):
+		AudioManager.play_sfx(sfx_deny, 0.0, -4.0)
+		EventBus.toast.emit("ONLY %d SKILLS PER RUN" % GameState.MAX_SKILLS,
+			Color(1, 0.55, 0.5))
 		return
 	var cost := GameState.skill_cost(skill_id)
 	if not GameState.upgrade_skill(skill_id):

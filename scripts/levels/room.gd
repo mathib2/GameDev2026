@@ -27,6 +27,8 @@ const BOSS_SCENES: Array[PackedScene] = [
 	preload("res://scenes/bosses/PorcelainChoir.tscn"),
 	preload("res://scenes/bosses/Jack.tscn"),
 ]
+## Floors 5-14 use this with a BossData attached. See _spawn_boss.
+const GENERIC_BOSS := preload("res://scenes/bosses/GenericBoss.tscn")
 
 const FLOOR_TEX := preload("res://assets/environment/tiles_floor.png")
 const WALL_TEX := preload("res://assets/environment/tiles_wall.png")
@@ -361,9 +363,27 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 		_close_doors()
 
 
+## One boss per floor, in a fixed order.
+##
+## The first four are the hand-written ones — they are the bosses most players
+## will ever see, and they earn bespoke scripts. Everything past floor 4 is a
+## BossData driving generic_boss.gd, ordered by id so the roster is stable
+## between runs rather than shuffling.
 func _spawn_boss(floor_index: int) -> void:
 	_close_doors()
-	var b := BOSS_SCENES[floor_index % BOSS_SCENES.size()].instantiate()
+	var b: Node
+	if floor_index < BOSS_SCENES.size():
+		b = BOSS_SCENES[floor_index].instantiate()
+	else:
+		var ids: Array = ContentDB.bosses.keys()
+		ids.sort()
+		if ids.is_empty():
+			# no data bosses indexed: fall back so a floor is never unbeatable
+			b = BOSS_SCENES[floor_index % BOSS_SCENES.size()].instantiate()
+		else:
+			var pick: BossData = ContentDB.bosses[ids[(floor_index - BOSS_SCENES.size()) % ids.size()]]
+			b = GENERIC_BOSS.instantiate()
+			b.data = pick
 	add_child(b)
 	b.global_position = Vector2(W * 0.5, H * 0.35)
 	b.floor_index = floor_index
@@ -504,7 +524,7 @@ func mark_cleared() -> void:
 		_spawn_pedestal(Vector2(W * 0.5 + 60, H * 0.5 - 50))
 	elif info.kind == FloorGenerator.RoomKind.BOSS:
 		_boss_payout()
-	elif info.kind == FloorGenerator.RoomKind.COMBAT and _rng.randf() < 0.22:
+	elif info.kind == FloorGenerator.RoomKind.COMBAT and _rng.randf() < 0.12:
 		# an ordinary fight occasionally leaves a chest behind, so clearing a
 		# room you did not have to clear is sometimes worth it
 		_spawn_chest(Vector2(W * 0.5, H * 0.5 - 46))

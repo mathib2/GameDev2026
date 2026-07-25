@@ -34,14 +34,19 @@ func _ready() -> void:
 			_secondary.text = "QUIT"
 			_add_volume_controls()
 		Mode.PAUSE:
-			_title.text = "PAUSED"
+			_dress_main_menu(false)
+			_title.text = "PAUSED!"
 			_subtitle.text = ""
 			_primary.text = "RESUME"
 			_secondary.text = "QUIT TO MENU"
+			_style_paper(_title, 20, Color(0.20, 0.19, 0.23))
 			_add_volume_controls()
 		Mode.GAME_OVER:
+			_dress_main_menu(false)
 			_primary.text = "RUN IT BACK"
 			_secondary.text = "MAIN MENU"
+			_style_paper(_title, 20, Color(0.20, 0.19, 0.23))
+			_style_paper(_subtitle, 9, Color(0.42, 0.40, 0.44))
 
 
 ## Turns the plain dark panel into the paper-and-pinned-note main menu.
@@ -51,17 +56,24 @@ func _ready() -> void:
 ## wrong — they stay as the dim overlay they were.
 ##
 ## Built in code so Menu.tscn keeps working unchanged for the other two modes.
-func _dress_main_menu() -> void:
+func _dress_main_menu(full: bool = true) -> void:
 	var dim: ColorRect = $Dim
-	dim.color = Color(0, 0, 0, 0)      # the paper is the background now
+	if full:
+		dim.color = Color(0, 0, 0, 0)      # the paper is the background now
 
-	var bg := TextureRect.new()
-	bg.texture = load("res://assets/ui/menu_bg.png")
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(bg)
-	move_child(bg, 0)                  # behind every other child
+		var bg := TextureRect.new()
+		bg.texture = load("res://assets/ui/menu_bg.png")
+		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		bg.stretch_mode = TextureRect.STRETCH_SCALE
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(bg)
+		move_child(bg, 0)                  # behind every other child
+	else:
+		# Pause and game-over sit over live gameplay, so they keep a dim rather
+		# than a full-bleed backdrop — but everything else (the note, the flat
+		# paper text) matches the main menu, which is what makes the game feel
+		# like one thing instead of two.
+		dim.color = Color(0.04, 0.03, 0.06, 0.80)
 
 	var logo := TextureRect.new()
 	logo.texture = load("res://assets/ui/menu_logo.png")
@@ -72,8 +84,9 @@ func _dress_main_menu() -> void:
 	logo.offset_right = -56
 	logo.offset_top = 10
 	logo.offset_bottom = 96
-	add_child(logo)
-	move_child(logo, 1)
+	if full:
+		add_child(logo)
+		move_child(logo, 1)
 
 	# the note sits behind the buttons; the CenterContainer centres both
 	var note := TextureRect.new()
@@ -94,6 +107,43 @@ func _dress_main_menu() -> void:
 		_style_paper(b, 13, Color(0.24, 0.23, 0.28))
 		b.custom_minimum_size = Vector2(180, 22)
 		b.flat = true
+
+	# MY STUFF and MOD MENU sit between the two main actions, as in the
+	# reference. Both were previously only reachable by keyboard (F2 / F1),
+	# which meant nobody found them.
+	_extra_button("MY STUFF", func() -> void:
+		var main := get_tree().current_scene
+		if main != null and main.get("wiki") != null:
+			main.wiki.toggle())
+	_extra_button("MOD MENU (F1)", func() -> void:
+		var main := get_tree().current_scene
+		if main == null:
+			return
+		for n in main.get_children():
+			# untyped: get_script() returns Variant, and `:=` on it is a
+			# parse error under this project's warnings-as-errors setting
+			var s = n.get_script()
+			if s != null and String(s.resource_path).ends_with("mod_menu.gd"):
+				for c in n.get_children():
+					if c is PanelContainer:
+						c.visible = not c.visible
+				return)
+
+
+func _extra_button(text: String, action: Callable) -> void:
+	var b := Button.new()
+	b.text = text
+	_style_paper(b, 12, Color(0.24, 0.23, 0.28))
+	b.custom_minimum_size = Vector2(180, 20)
+	b.flat = true
+	b.pressed.connect(func() -> void:
+		AudioManager.play_sfx(sfx_confirm, 0.0, -2.0)
+		action.call())
+	b.mouse_entered.connect(func() -> void:
+		AudioManager.play_sfx(sfx_select, 0.05, -6.0))
+	var vb: VBoxContainer = $Panel/VBox
+	vb.add_child(b)
+	vb.move_child(b, _secondary.get_index())
 
 
 ## Menu text on paper: dark ink, no button chrome, and a light hover tint —

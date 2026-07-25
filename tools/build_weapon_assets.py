@@ -31,17 +31,33 @@ ICON = 16
 # in the game requires a square icon, pedestals just draw the texture.
 WIDE = (32, 16)
 
-# Plastic ramps: darkest -> lightest. Four stops is enough to read as moulded
-# plastic; more just muddies at 16px.
+# Plastic ramps: darkest -> lightest.
+#
+# Six stops, not four. Four was enough to read as "plastic" but it is exactly
+# what makes a sprite look 8-bit — flat bands with nothing between them. Real
+# 16-bit era art leans on having enough intermediate tones to imply a curved
+# surface. Each ramp now runs near-black outline -> shadow -> midtone -> body
+# -> highlight -> specular, which is what gives a 16px gun a rounded barrel
+# instead of a stripe.
 PALETTES = {
-    "blue":   [(0x10, 0x28, 0x5c), (0x1e, 0x53, 0xb0), (0x46, 0x93, 0xf0), (0xc4, 0xe4, 0xff)],
-    "red":    [(0x5c, 0x0f, 0x1e), (0xc0, 0x24, 0x38), (0xf2, 0x5d, 0x60), (0xff, 0xd2, 0xd8)],
-    "yellow": [(0x5e, 0x40, 0x0c), (0xd0, 0x94, 0x1c), (0xf7, 0xcf, 0x4a), (0xff, 0xf4, 0xc8)],
-    "green":  [(0x10, 0x4a, 0x1c), (0x24, 0x8f, 0x38), (0x5c, 0xd0, 0x6e), (0xd4, 0xf7, 0xd8)],
-    "orange": [(0x60, 0x28, 0x0a), (0xd4, 0x60, 0x18), (0xf7, 0x9c, 0x40), (0xff, 0xe2, 0xbc)],
-    "cyan":   [(0x0e, 0x4a, 0x50), (0x1c, 0x91, 0x9c), (0x4c, 0xd8, 0xe0), (0xd0, 0xf8, 0xfa)],
-    "purple": [(0x36, 0x12, 0x5c), (0x74, 0x2c, 0xc0), (0xac, 0x6c, 0xf0), (0xe6, 0xd2, 0xff)],
-    "pink":   [(0x60, 0x14, 0x40), (0xc8, 0x34, 0x86), (0xf4, 0x74, 0xbc), (0xff, 0xd8, 0xee)],
+    "blue":   [(0x06, 0x10, 0x2c), (0x10, 0x28, 0x5c), (0x1e, 0x53, 0xb0),
+               (0x36, 0x7c, 0xd8), (0x6e, 0xb0, 0xf6), (0xd8, 0xee, 0xff)],
+    "red":    [(0x2c, 0x06, 0x10), (0x5c, 0x0f, 0x1e), (0xa8, 0x1e, 0x30),
+               (0xd8, 0x3c, 0x4c), (0xf2, 0x76, 0x80), (0xff, 0xdc, 0xe0)],
+    "yellow": [(0x2e, 0x1e, 0x04), (0x5e, 0x40, 0x0c), (0xb0, 0x7c, 0x14),
+               (0xe0, 0xa8, 0x24), (0xf7, 0xd8, 0x62), (0xff, 0xf8, 0xd8)],
+    "green":  [(0x06, 0x24, 0x0c), (0x10, 0x4a, 0x1c), (0x1e, 0x78, 0x2e),
+               (0x30, 0xa8, 0x44), (0x6e, 0xd8, 0x80), (0xdc, 0xfa, 0xe2)],
+    "orange": [(0x2e, 0x12, 0x04), (0x60, 0x28, 0x0a), (0xb4, 0x4c, 0x10),
+               (0xe0, 0x74, 0x1c), (0xf7, 0xac, 0x54), (0xff, 0xe8, 0xcc)],
+    "cyan":   [(0x04, 0x24, 0x28), (0x0e, 0x4a, 0x50), (0x18, 0x7a, 0x84),
+               (0x28, 0xac, 0xb8), (0x60, 0xe0, 0xe8), (0xdc, 0xfa, 0xfc)],
+    "purple": [(0x1a, 0x06, 0x2e), (0x36, 0x12, 0x5c), (0x5e, 0x24, 0x9c),
+               (0x8c, 0x44, 0xd8), (0xb8, 0x80, 0xf6), (0xec, 0xdc, 0xff)],
+    "pink":   [(0x2e, 0x08, 0x1e), (0x60, 0x14, 0x40), (0xa8, 0x28, 0x6e),
+               (0xd8, 0x4c, 0x9c), (0xf4, 0x88, 0xc6), (0xff, 0xe0, 0xf2)],
+    "steel":  [(0x0c, 0x0e, 0x14), (0x24, 0x28, 0x34), (0x46, 0x4e, 0x60),
+               (0x6e, 0x78, 0x8c), (0x9e, 0xa8, 0xbc), (0xe2, 0xe8, 0xf2)],
 }
 
 # (pack sprite index, output path, palette or None to keep colours, canvas)
@@ -70,25 +86,80 @@ PICKS = [
     (54, "assets/effects/fx_dart.png",          "yellow", (8, 8)),
     (23, "assets/effects/fx_spark.png",         None,     (8, 8)),
     (64, "assets/effects/fx_popper.png",        "pink",   (16, 8)),
+    # ── replacing the original procedural guns ───────────────────────────
+    # These three shipped as 2-3 colour blobs — flat, unreadable at 16px, and
+    # the reason the toy gun looked bad. Same silhouette-plus-plastic-ramp
+    # treatment as the rest of the roster so the whole weapon set matches.
+    (81, "assets/items/wpn_toy_gun.png",        "yellow", None),
+    (74, "assets/items/wpn_nail_gun.png",       "steel",  None),
+    (82, "assets/items/wpn_shotgun.png",        "orange", WIDE),
     # ── decor ────────────────────────────────────────────────────────────
     (46, "assets/environment/prop_books.png",   None,     None),
 ]
 
 
 def plastic(img, ramp):
-    """Re-map a sprite through a plastic ramp, keeping its alpha and shading."""
+    """Repaint a sprite as moulded plastic, adding shading it did not have.
+
+    A pure luminance remap cannot make art look better than its source: if the
+    original only contains four distinct tones, the output has four tones no
+    matter how many stops the ramp has, and it still reads as flat 8-bit.
+
+    So this *synthesises* form instead of only recolouring it, from three
+    cues stacked on the source luminance:
+
+      * a top-down light, so the upper half of every shape is brighter — the
+        single strongest cue that a surface is round rather than flat
+      * darkened rim pixels wherever a pixel touches transparency, which reads
+        as a moulded edge and stops the sprite dissolving into the background
+      * a specular kick on upper-left rim pixels, the highlight you get on
+        shiny plastic
+
+    The result uses the whole ramp, which is what actually separates a 16-bit
+    looking sprite from an 8-bit one.
+    """
+    w, h = img.size
+    src = img.load()
     out = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    src, dst = img.load(), out.load()
-    for y in range(img.height):
-        for x in range(img.width):
+    dst = out.load()
+
+    def solid(x, y):
+        return 0 <= x < w and 0 <= y < h and src[x, y][3] > 8
+
+    # vertical extent of the actual artwork, so the light is relative to the
+    # sprite rather than to its (often generously padded) canvas
+    ys = [y for y in range(h) for x in range(w) if solid(x, y)]
+    if not ys:
+        return out
+    y0, y1 = min(ys), max(ys)
+    span = max(1, y1 - y0)
+
+    for y in range(h):
+        for x in range(w):
             r, g, b, a = src[x, y]
             if a <= 8:
                 continue
             lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
-            # bias upward: military art is dark, toys are bright
-            lum = min(1.0, lum ** 0.78 * 1.18)
-            idx = min(len(ramp) - 1, int(lum * len(ramp)))
-            dst[x, y] = (*ramp[idx], a)
+            lum = min(1.0, lum ** 0.8 * 1.1)
+
+            # top-down light: +0.22 at the top of the sprite, -0.14 at the base
+            t = (y - y0) / span
+            lum += 0.22 - 0.36 * t
+
+            # rim handling
+            open_up = not solid(x, y - 1)
+            open_left = not solid(x - 1, y)
+            open_down = not solid(x, y + 1)
+            open_right = not solid(x + 1, y)
+            if open_down or open_right:
+                lum -= 0.30            # shaded underside
+            if open_up or open_left:
+                lum += 0.26            # lit top edge
+            if open_up and open_left:
+                lum += 0.16            # specular corner
+
+            lum = max(0.0, min(0.999, lum))
+            dst[x, y] = (*ramp[int(lum * len(ramp))], a)
     return out
 
 
