@@ -292,6 +292,11 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO,
 		_die()
 
 
+## How far this body extends from its centre, for melee range checks.
+func melee_radius() -> float:
+	return data.hit_radius if data != null else 10.0
+
+
 func knockback_from(from: Vector2, force: float) -> void:
 	_knockback += (global_position - from).normalized() * force
 

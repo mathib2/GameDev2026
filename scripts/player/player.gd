@@ -125,7 +125,10 @@ func _melee(w: WeaponData) -> void:
 		if not is_instance_valid(body) or not (body is Node2D):
 			continue
 		var to: Vector2 = body.global_position - global_position
-		if to.length() > w.reach + 16.0:
+		# measure to the target's edge, not its centre — a car-sized boss
+		# should not require standing inside him to punch
+		var body_radius: float = body.melee_radius() if body.has_method("melee_radius") else 0.0
+		if to.length() - body_radius > w.reach + 16.0:
 			continue
 		if rad_to_deg(absf(to.angle_to(aim))) > w.arc_degrees * 0.5:
 			continue

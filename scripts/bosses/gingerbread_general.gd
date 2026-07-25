@@ -242,6 +242,10 @@ func _touch_player() -> void:
 			player.take_damage(2 if state == State.BLITZ else 1, global_position)
 
 
+func melee_radius() -> float:
+	return 24.0
+
+
 func take_damage(amount: float, from: Vector2 = Vector2.ZERO,
 		crit: bool = false, _knockback: float = 0.0) -> void:
 	if state == State.DEAD or state == State.INTRO:

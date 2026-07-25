@@ -37,6 +37,10 @@ func _process(delta: float) -> void:
 		_sprite.modulate = Color(4, 4, 4) if _flash > 0.0 else Color.WHITE
 
 
+func melee_radius() -> float:
+	return 9.0
+
+
 func take_damage(amount: float, _from: Vector2 = Vector2.ZERO,
 		_crit: bool = false, _knockback: float = 0.0) -> void:
 	health -= amount
