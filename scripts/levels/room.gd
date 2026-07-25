@@ -14,7 +14,12 @@ const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 const PICKUP_SCENE := preload("res://scenes/items/Pickup.tscn")
 const ITEM_PEDESTAL := preload("res://scenes/items/ItemPedestal.tscn")
 const WEAPON_PEDESTAL := preload("res://scenes/items/WeaponPedestal.tscn")
-const BOSS_SCENE := preload("res://scenes/bosses/TeddyBearKing.tscn")
+# One boss per floor, cycling: Nursery/Attic get the King, Playroom/Toy
+# Factory get the General. New bosses just join this list.
+const BOSS_SCENES: Array[PackedScene] = [
+	preload("res://scenes/bosses/TeddyBearKing.tscn"),
+	preload("res://scenes/bosses/GingerbreadGeneral.tscn"),
+]
 
 const FLOOR_TEX := preload("res://assets/environment/tiles_floor.png")
 const WALL_TEX := preload("res://assets/environment/tiles_wall.png")
@@ -214,7 +219,7 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 
 func _spawn_boss(floor_index: int) -> void:
 	_close_doors()
-	var b := BOSS_SCENE.instantiate()
+	var b := BOSS_SCENES[floor_index % BOSS_SCENES.size()].instantiate()
 	add_child(b)
 	b.global_position = Vector2(W * 0.5, H * 0.35)
 	b.floor_index = floor_index

@@ -14,6 +14,7 @@ var _step: float = 0.0
 var _visited: int = 0
 var _boss_seen: bool = false
 var _boss_killed: bool = false
+var _bosses_killed: int = 0
 var _floors_seen: int = 0
 var _failures: Array[String] = []
 var _dirs := ["r", "d", "l", "u"]
@@ -24,7 +25,10 @@ var _elapsed: float = 0.0
 func _ready() -> void:
 	print("[SMOKE] starting")
 	EventBus.boss_spawned.connect(func(_b, n): _boss_seen = true; print("[SMOKE] boss: %s" % n))
-	EventBus.boss_defeated.connect(func(_b): _boss_killed = true; print("[SMOKE] boss defeated"))
+	EventBus.boss_defeated.connect(func(_b):
+		_boss_killed = true
+		_bosses_killed += 1
+		print("[SMOKE] boss defeated"))
 	EventBus.floor_entered.connect(func(i, n): _floors_seen += 1; print("[SMOKE] floor %d: %s" % [i, n]))
 	EventBus.room_entered.connect(func(_r): _visited += 1)
 	EventBus.player_died.connect(func(): print("[SMOKE] player died (expected: they take contact damage)"))
@@ -33,7 +37,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_elapsed += delta
 	# hard time budget so the test always reports instead of exploring forever
-	if _elapsed > 40.0:
+	if _elapsed > 70.0:
 		_report_and_quit()
 		return
 	_step += delta
@@ -60,6 +64,13 @@ func _process(delta: float) -> void:
 	var d := _next_step()
 	if d != "":
 		RunManager.travel(d)
+		return
+
+	# floor exhausted — ride the exit portal down so the second floor's boss
+	# (the roster alternates per floor) gets exercised too
+	if _bosses_killed >= 1 and _floors_seen < 2:
+		if RunManager.player != null and room != null and is_instance_valid(room):
+			RunManager.player.global_position = Vector2(room.W * 0.5, room.H * 0.5)
 		return
 
 	_report_and_quit()
@@ -103,11 +114,13 @@ func _report_and_quit() -> void:
 	print("[SMOKE] rooms entered: %d" % _visited)
 	print("[SMOKE] floors seen:   %d" % _floors_seen)
 	print("[SMOKE] boss spawned:  %s" % _boss_seen)
-	print("[SMOKE] boss killed:   %s" % _boss_killed)
+	print("[SMOKE] bosses killed: %d" % _bosses_killed)
 	print("[SMOKE] kills:         %d" % GameState.kills)
 
 	if _visited < 3: _failures.append("visited fewer than 3 rooms")
 	if GameState.kills <= 0: _failures.append("killed nothing")
+	if _floors_seen < 2: _failures.append("never descended to floor 2")
+	if _bosses_killed < 2: _failures.append("second floor's boss not killed")
 
 	if _failures.is_empty():
 		print("[SMOKE] PASS")
