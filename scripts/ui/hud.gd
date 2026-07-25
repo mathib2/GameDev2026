@@ -167,7 +167,9 @@ func _draw_minimap() -> void:
 			col = Color(1, 0.9, 0.5)
 		elif r.visited:
 			col = Color(0.55, 0.52, 0.5)
-		if r.visited or r == cur:
+		# the boss room shows its colour as soon as it appears on the map,
+		# so the player can head for it deliberately (Isaac-style)
+		if r.visited or r == cur or r.kind == FloorGenerator.RoomKind.BOSS:
 			match r.kind:
 				FloorGenerator.RoomKind.BOSS: col = Color(0.8, 0.25, 0.25)
 				FloorGenerator.RoomKind.TREASURE: col = Color(0.9, 0.75, 0.3)

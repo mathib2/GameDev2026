@@ -25,6 +25,8 @@ var _home: Vector2
 var _charge_dir: Vector2 = Vector2.RIGHT
 var _hop_vel: Vector2 = Vector2.ZERO
 var _telegraph: Line2D = null
+## Champion variants (set by the room): tinted, tougher, always pay out.
+var champion: bool = false
 
 @onready var anim: SheetAnimator = $SheetAnimator
 
@@ -317,6 +319,8 @@ func _drop_loot() -> void:
 	var room := get_parent()
 	if room == null or not room.has_method("spawn_pickup"):
 		return
+	if champion:
+		room.spawn_pickup("coin", global_position + Vector2(6, 0))
 	if randf() < data.heart_chance:
 		room.spawn_pickup("heart", global_position)
 	elif randf() < data.coin_chance:

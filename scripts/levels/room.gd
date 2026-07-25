@@ -29,6 +29,37 @@ var info                       ## FloorGenerator.RoomInfo
 var alive_enemies: int = 0
 var _doors: Array = []
 var _rng := RandomNumberGenerator.new()
+var _tint: Color = Color.WHITE
+
+## Per-floor ambience tints so the Nursery, Playroom, Attic and Toy
+## Factory stop looking identical.
+const FLOOR_TINTS: Array[Color] = [
+	Color(1.0, 1.0, 1.0),
+	Color(0.93, 0.96, 1.08),
+	Color(1.08, 0.97, 0.88),
+	Color(0.88, 0.96, 1.0),
+]
+
+## Obstacle layout templates, Isaac-style. Tile coords keep the door
+## lanes (x 9-11, y 5-7) and a 2-tile border clear so rooms always path.
+const LAYOUT_CORNERS: Array = [
+	Vector2i(4, 3), Vector2i(5, 3), Vector2i(4, 4), Vector2i(5, 4),
+	Vector2i(14, 3), Vector2i(15, 3), Vector2i(14, 4), Vector2i(15, 4),
+	Vector2i(4, 8), Vector2i(5, 8), Vector2i(4, 9), Vector2i(5, 9),
+	Vector2i(14, 8), Vector2i(15, 8), Vector2i(14, 9), Vector2i(15, 9),
+]
+const LAYOUT_PILLARS: Array = [
+	Vector2i(5, 3), Vector2i(8, 4), Vector2i(12, 4), Vector2i(15, 3),
+	Vector2i(5, 9), Vector2i(8, 8), Vector2i(12, 8), Vector2i(15, 9),
+]
+const LAYOUT_RAILS: Array = [
+	Vector2i(4, 4), Vector2i(5, 4), Vector2i(6, 4), Vector2i(13, 4), Vector2i(14, 4), Vector2i(15, 4),
+	Vector2i(4, 8), Vector2i(5, 8), Vector2i(6, 8), Vector2i(13, 8), Vector2i(14, 8), Vector2i(15, 8),
+]
+const LAYOUT_DIAMOND: Array = [
+	Vector2i(8, 3), Vector2i(12, 3), Vector2i(6, 4), Vector2i(14, 4),
+	Vector2i(6, 8), Vector2i(14, 8), Vector2i(8, 9), Vector2i(12, 9),
+]
 
 signal cleared()
 
@@ -36,6 +67,7 @@ signal cleared()
 func build(room_info) -> void:
 	info = room_info
 	_rng.seed = info.seed_value if info.seed_value != 0 else randi()
+	_tint = FLOOR_TINTS[clampi(GameState.floor_index, 0, FLOOR_TINTS.size() - 1)]
 	_paint_floor()
 	_build_walls()
 	_scatter_decor()
@@ -46,6 +78,7 @@ func _paint_floor() -> void:
 	var holder := Node2D.new()
 	holder.name = "Floor"
 	holder.z_index = -20
+	holder.modulate = _tint
 	add_child(holder)
 	for y in ROWS:
 		for x in COLS:
@@ -97,6 +130,7 @@ func _wall_tile(body: StaticBody2D, tx: int, ty: int) -> void:
 	s.texture = WALL_TEX
 	s.hframes = 2
 	s.frame = 0 if (tx + ty) % 3 else 1
+	s.modulate = _tint
 	s.centered = false
 	s.position = Vector2(tx * TILE, ty * TILE)
 	s.scale = Vector2(TILE / 16.0, TILE / 16.0)
@@ -149,6 +183,22 @@ func _physics_process(_delta: float) -> void:
 func _scatter_decor() -> void:
 	if info.kind == FloorGenerator.RoomKind.BOSS:
 		return
+	# special rooms stay clean showrooms
+	if info.kind in [FloorGenerator.RoomKind.SHOP, FloorGenerator.RoomKind.TREASURE,
+			FloorGenerator.RoomKind.SECRET]:
+		return
+	# pick a layout template per room (seeded, so re-entry looks the same);
+	# an empty pick falls back to the classic random scatter
+	var layouts: Array = [[], LAYOUT_CORNERS, LAYOUT_PILLARS, LAYOUT_RAILS, LAYOUT_DIAMOND]
+	var pick: Array = layouts[_rng.randi_range(0, layouts.size() - 1)]
+	if pick.is_empty():
+		_scatter_random()
+	else:
+		for t in pick:
+			_spawn_crate(Vector2(t.x * TILE + 16, t.y * TILE + 16))
+
+
+func _scatter_random() -> void:
 	var count := _rng.randi_range(2, 6)
 	for i in count:
 		var tx := _rng.randi_range(3, COLS - 4)
@@ -158,10 +208,14 @@ func _scatter_decor() -> void:
 			continue
 		if absi(tx - COLS / 2) <= 1 or absi(ty - ROWS / 2) <= 1:
 			continue
-		var crate := preload("res://scripts/levels/breakable.gd").new()
-		crate.position = Vector2(tx * TILE + 16, ty * TILE + 16)
-		crate.z_index = 1
-		add_child(crate)
+		_spawn_crate(Vector2(tx * TILE + 16, ty * TILE + 16))
+
+
+func _spawn_crate(pos: Vector2) -> void:
+	var crate := preload("res://scripts/levels/breakable.gd").new()
+	crate.position = pos
+	crate.z_index = 1
+	add_child(crate)
 
 
 # ── population ────────────────────────────────────────────────────────────
@@ -223,6 +277,12 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 		e.global_position = pos
 		if difficulty > 1.2:
 			e.scale = Vector2(1.25, 1.25)
+			e.health = data.max_health * 1.9
+		elif _rng.randf() < 0.08 + 0.03 * floor_index:
+			# champion variant: tinted, tougher, always pays out a coin
+			e.champion = true
+			e.modulate = Color(1.3, 0.75, 0.8)
+			e.scale = Vector2(1.18, 1.18)
 			e.health = data.max_health * 1.9
 		placed += 1
 	alive_enemies = placed
@@ -302,21 +362,23 @@ func mark_cleared() -> void:
 	EventBus.room_cleared.emit(self)
 	EventBus.minimap_dirty.emit()
 	cleared.emit()
-	# a cleared elite room owes you something
+	# a cleared elite room owes you something — off-lane so the solid
+	# plinth never blocks the path between doors
 	if info.kind == FloorGenerator.RoomKind.ELITE:
-		_spawn_pedestal()
+		_spawn_pedestal(Vector2(W * 0.5 + 60, H * 0.5 - 50))
 	elif info.kind == FloorGenerator.RoomKind.BOSS:
 		_boss_payout()
 
 
 func _boss_payout() -> void:
 	# A multi-phase fight owes you more than a staircase. The exit portal
-	# spawns at the centre, so the reward sits just above it.
+	# spawns at the centre; the reward sits diagonally off it so the solid
+	# plinth never blocks the walking lanes to the portal.
 	var center := Vector2(W * 0.5, H * 0.5)
 	if _rng.randf() < 0.5:
-		_spawn_pedestal(center + Vector2(0, -70))
+		_spawn_pedestal(center + Vector2(60, -50))
 	else:
-		_spawn_weapon_pedestal(center + Vector2(0, -70))
+		_spawn_weapon_pedestal(center + Vector2(60, -50))
 	var coin_count := 6 + GameState.floor_index * 2
 	for i in coin_count:
 		var ang := TAU * float(i) / float(coin_count)
