@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+
+# Build output
+build/
+dist/
+bin/
+obj/
+*.tmp
+
+# Dependencies
+node_modules/
+
+# Engine-specific (uncomment as needed)
+# Unity
+# Library/
+# Temp/
+# Logs/
+# Godot
+# .godot/
+# .import/
