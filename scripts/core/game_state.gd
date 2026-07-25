@@ -24,8 +24,22 @@ var floor_index: int = 0
 var kills: int = 0
 var run_time: float = 0.0
 var items: Array[ItemData] = []
+## Per-pickup rolled modifiers, aligned with `items` (Mystery Meat).
+var item_rolls: Array[Dictionary] = []
 var weapon: WeaponData = null
 var _stats: Dictionary = {}
+
+## What Mystery Meat can turn out to be. Mostly good. Mostly.
+const MEAT_ROLLS := [
+	{&"damage_mult": 1.3},
+	{&"speed_mult": 1.15},
+	{&"max_health": 2},
+	{&"fire_rate_mult": 1.25},
+	{&"crit_chance": 0.12},
+	{&"contact_armour": 1},
+	{&"damage_mult": 1.5, &"speed_mult": 0.9},
+	{&"max_health": 3, &"fire_rate_mult": 0.9},
+]
 
 
 func _ready() -> void:
@@ -34,6 +48,7 @@ func _ready() -> void:
 
 func reset() -> void:
 	items.clear()
+	item_rolls.clear()
 	coins = 0
 	floor_index = 0
 	kills = 0
@@ -45,18 +60,24 @@ func reset() -> void:
 
 func _recompute() -> void:
 	_stats = BASE.duplicate()
-	for item in items:
-		if item == null:
+	for i in items.size():
+		if items[i] == null:
 			continue
-		for k in item.modifiers:
-			if not _stats.has(k):
-				_stats[k] = 0.0
-			# *_mult keys multiply, everything else adds.
-			if String(k).ends_with("_mult"):
-				_stats[k] = float(_stats[k]) * float(item.modifiers[k])
-			else:
-				_stats[k] = _stats[k] + item.modifiers[k]
+		_apply_modifiers(items[i].modifiers)
+		if i < item_rolls.size():
+			_apply_modifiers(item_rolls[i])
 	EventBus.stat_changed.emit()
+
+
+func _apply_modifiers(mods: Dictionary) -> void:
+	for k in mods:
+		if not _stats.has(k):
+			_stats[k] = 0.0
+		# *_mult keys multiply, everything else adds.
+		if String(k).ends_with("_mult"):
+			_stats[k] = float(_stats[k]) * float(mods[k])
+		else:
+			_stats[k] = _stats[k] + mods[k]
 
 
 func stat(key: String) -> float:
@@ -67,11 +88,17 @@ func max_health() -> int:
 	return int(_stats.get("max_health", 6))
 
 
-func add_item(item: ItemData) -> void:
+## Returns a human-readable description of any rolled effect ("" if fixed),
+## so the pickup toast can tell the player what the mystery turned out to be.
+func add_item(item: ItemData) -> String:
 	if item == null:
-		return
+		return ""
 	var before := max_health()
+	var roll: Dictionary = {}
+	if item.random_effect:
+		roll = MEAT_ROLLS[randi() % MEAT_ROLLS.size()].duplicate()
 	items.append(item)
+	item_rolls.append(roll)
 	_recompute()
 	# gaining max health also grants the new hearts, or it feels like a downgrade
 	var gained := max_health() - before
@@ -79,6 +106,22 @@ func add_item(item: ItemData) -> void:
 		health += gained
 	health = clampi(health, 0, max_health())
 	EventBus.item_collected.emit(item)
+	return describe_modifiers(roll)
+
+
+static func describe_modifiers(mods: Dictionary) -> String:
+	var parts: PackedStringArray = []
+	for k in mods:
+		var key := String(k)
+		var v: float = float(mods[k])
+		if key.ends_with("_mult"):
+			parts.append("%+d%% %s" % [int(round((v - 1.0) * 100.0)),
+				key.trim_suffix("_mult").replace("_", " ")])
+		elif key == "crit_chance":
+			parts.append("%+d%% crit" % int(round(v * 100.0)))
+		else:
+			parts.append("%+d %s" % [int(v), key.replace("_", " ")])
+	return ", ".join(parts)
 
 
 func equip(w: WeaponData) -> void:

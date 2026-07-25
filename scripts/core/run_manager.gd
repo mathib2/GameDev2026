@@ -31,6 +31,15 @@ func _ready() -> void:
 	EventBus.boss_defeated.connect(_on_boss_defeated)
 	EventBus.run_ended.connect(func(_victory: bool) -> void: _run_active = false)
 	EventBus.player_died.connect(func() -> void: _run_active = false)
+	EventBus.item_collected.connect(_on_item_collected)
+
+
+func _on_item_collected(item: ItemData) -> void:
+	if item.companion_scene == "" or world == null or player == null:
+		return
+	var companion := (load(item.companion_scene) as PackedScene).instantiate()
+	world.add_child(companion)
+	companion.global_position = player.global_position + Vector2(-20, -8)
 
 
 func _process(delta: float) -> void:
@@ -141,10 +150,13 @@ func _on_enemy_died(_e: Node) -> void:
 func _on_boss_defeated(_b: Node) -> void:
 	if current_room != null and is_instance_valid(current_room):
 		current_room.mark_cleared()
-		_spawn_exit()
+		spawn_exit()
 
 
-func _spawn_exit() -> void:
+## Public: the room calls this when a cleared boss room is re-entered,
+## because the portal dies with the room instance on travel — without the
+## respawn the run soft-locks.
+func spawn_exit() -> void:
 	var exit := Area2D.new()
 	exit.collision_layer = 0
 	exit.collision_mask = 2

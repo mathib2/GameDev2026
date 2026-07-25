@@ -157,6 +157,10 @@ func _scatter_decor() -> void:
 func populate(floor_index: int) -> void:
 	if info.spawned:
 		_open_doors()
+		# The exit portal died with the previous room instance; without this
+		# a player who leaves after the boss kill can never descend.
+		if info.kind == FloorGenerator.RoomKind.BOSS and info.cleared:
+			RunManager.spawn_exit()
 		return
 	info.spawned = true
 
@@ -251,13 +255,15 @@ func _spawn_weapon_pedestal(pos: Vector2, price: int = 0) -> void:
 
 func _spawn_shop() -> void:
 	var slots := [-80.0, 0.0, 80.0]
+	var stocked: Array = []
 	for i in slots.size():
-		var item := ContentDB.random_item()
+		var item := ContentDB.random_item(true, stocked)
 		if item == null:
 			continue
+		stocked.append(item.id)
 		var p := ITEM_PEDESTAL.instantiate()
 		p.item = item
-		p.price = 12 + i * 4
+		p.price = 12 + i * 4 + GameState.floor_index * 5
 		add_child(p)
 		p.global_position = Vector2(W * 0.5 + slots[i], H * 0.5)
 

@@ -66,11 +66,17 @@ func _process(delta: float) -> void:
 		RunManager.travel(d)
 		return
 
-	# floor exhausted — ride the exit portal down so the second floor's boss
-	# (the roster alternates per floor) gets exercised too
+	# floor exhausted — walk back to the boss room and ride the exit portal
+	# down so the second floor's boss (the roster alternates) runs too
 	if _bosses_killed >= 1 and _floors_seen < 2:
-		if RunManager.player != null and room != null and is_instance_valid(room):
-			RunManager.player.global_position = Vector2(room.W * 0.5, room.H * 0.5)
+		var here = RunManager.current_info
+		if here != null and here.kind == FloorGenerator.RoomKind.BOSS:
+			if RunManager.player != null:
+				RunManager.player.global_position = Vector2(room.W * 0.5, room.H * 0.5)
+		else:
+			var back := _bfs_step(func(r): return r.kind == FloorGenerator.RoomKind.BOSS)
+			if back != "":
+				RunManager.travel(back)
 		return
 
 	_report_and_quit()
@@ -79,34 +85,39 @@ func _process(delta: float) -> void:
 ## BFS across the floor graph. Returns the first door to take toward the
 ## nearest unvisited room, falling back to the boss room.
 func _next_step() -> String:
+	var d := _bfs_step(func(r): return not r.visited)
+	if d != "":
+		return d
+	return _bfs_step(func(r): return r.kind == FloorGenerator.RoomKind.BOSS and not r.cleared)
+
+
+## First door to take toward the nearest room matching `want`.
+func _bfs_step(want: Callable) -> String:
 	var gen = RunManager.generator
 	var here = RunManager.current_info
 	if gen == null or here == null:
 		return ""
-	for goal_pass in 2:
-		var seen := {here.key(): true}
-		var queue: Array = []
+	var seen := {here.key(): true}
+	var queue: Array = []
+	for d in _dirs:
+		if here.doors.get(d, false):
+			var n = gen.neighbour(here, d)
+			if n != null:
+				queue.append([n, d])
+				seen[n.key()] = true
+	while not queue.is_empty():
+		var entry: Array = queue.pop_front()
+		var room = entry[0]
+		var first: String = entry[1]
+		if want.call(room):
+			return first
 		for d in _dirs:
-			if here.doors.get(d, false):
-				var n = gen.neighbour(here, d)
-				if n != null:
-					queue.append([n, d])
-					seen[n.key()] = true
-		while not queue.is_empty():
-			var entry: Array = queue.pop_front()
-			var room = entry[0]
-			var first: String = entry[1]
-			var wanted: bool = (not room.visited) if goal_pass == 0 \
-				else (room.kind == FloorGenerator.RoomKind.BOSS and not room.cleared)
-			if wanted:
-				return first
-			for d in _dirs:
-				if not room.doors.get(d, false):
-					continue
-				var n = gen.neighbour(room, d)
-				if n != null and not seen.has(n.key()):
-					seen[n.key()] = true
-					queue.append([n, first])
+			if not room.doors.get(d, false):
+				continue
+			var n = gen.neighbour(room, d)
+			if n != null and not seen.has(n.key()):
+				seen[n.key()] = true
+				queue.append([n, first])
 	return ""
 
 

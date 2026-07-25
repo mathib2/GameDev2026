@@ -84,12 +84,15 @@ func get_weapon(id: StringName) -> WeaponData: return weapons.get(id)
 func get_item(id: StringName) -> ItemData: return items.get(id)
 
 
-## Weighted random item the player does not already own.
-func random_item(exclude_owned: bool = true) -> ItemData:
+## Weighted random item the player does not already own. `exclude_ids`
+## lets a shop avoid stocking the same item twice.
+func random_item(exclude_owned: bool = true, exclude_ids: Array = []) -> ItemData:
 	var pool: Array = []
 	var total := 0.0
 	for it in items.values():
 		if exclude_owned and it.unique and GameState.has_item(it.id):
+			continue
+		if exclude_ids.has(it.id):
 			continue
 		pool.append(it)
 		total += maxf(0.01, it.weight)
