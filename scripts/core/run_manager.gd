@@ -20,8 +20,8 @@ var _rng := RandomNumberGenerator.new()
 var _travelling: bool = false
 var _run_active: bool = false
 
-var music_game: AudioStream = preload("res://assets/audio/music/music_game.wav")
-var music_boss: AudioStream = preload("res://assets/audio/music/music_boss.wav")
+var music_game: AudioStream = preload("res://assets/audio/music/16. Feral Amalgamation.wav")
+var music_boss: AudioStream = preload("res://assets/audio/music/04. The Filthy Mind (ft. SixteenInMono).wav")
 var sfx_door: AudioStream = preload("res://assets/audio/sfx/door_open.wav")
 var sfx_descend: AudioStream = preload("res://assets/audio/sfx/floor_descend.wav")
 

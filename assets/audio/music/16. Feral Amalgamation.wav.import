@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://lip3eyweb0fk"
+path="res://.godot/imported/16. Feral Amalgamation.wav-a993f7388544599e72918e1a6ec67653.sample"
+
+[deps]
+
+source_file="res://assets/audio/music/16. Feral Amalgamation.wav"
+dest_files=["res://.godot/imported/16. Feral Amalgamation.wav-a993f7388544599e72918e1a6ec67653.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

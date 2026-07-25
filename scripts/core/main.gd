@@ -11,7 +11,7 @@ extends Node
 
 var _running: bool = false
 
-var music_menu: AudioStream = preload("res://assets/audio/music/music_menu.wav")
+var music_menu: AudioStream = preload("res://assets/audio/music/09. Treasures Within the Abomination.wav")
 var music_victory: AudioStream = preload("res://assets/audio/music/music_victory.wav")
 var music_death: AudioStream = preload("res://assets/audio/music/music_death.wav")
 

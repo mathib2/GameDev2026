@@ -1,26 +1,25 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://dsqb80horrwny"]
 
-[ext_resource type="Script" path="res://scripts/core/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://bd3xvqa314c5p" path="res://scripts/core/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/ui/HUD.tscn" id="2_hud"]
 [ext_resource type="PackedScene" path="res://scenes/menus/Menu.tscn" id="3_menu"]
 
-[node name="Main" type="Node"]
+[node name="Main" type="Node" unique_id=329681871]
 script = ExtResource("1_main")
 
-[node name="World" type="Node2D" parent="."]
+[node name="World" type="Node2D" parent="." unique_id=1527917697]
 
-[node name="HUD" parent="." instance=ExtResource("2_hud")]
+[node name="HUD" parent="." unique_id=404475831 instance=ExtResource("2_hud")]
 
-[node name="Menus" type="CanvasLayer" parent="."]
+[node name="Menus" type="CanvasLayer" parent="." unique_id=987952961]
 layer = 5
 
-[node name="MainMenu" parent="Menus" instance=ExtResource("3_menu")]
-mode = 0
+[node name="MainMenu" parent="Menus" unique_id=1642684669 instance=ExtResource("3_menu")]
 
-[node name="PauseMenu" parent="Menus" instance=ExtResource("3_menu")]
+[node name="PauseMenu" parent="Menus" unique_id=1796079571 instance=ExtResource("3_menu")]
 visible = false
 mode = 1
 
-[node name="GameOver" parent="Menus" instance=ExtResource("3_menu")]
+[node name="GameOver" parent="Menus" unique_id=661404366 instance=ExtResource("3_menu")]
 visible = false
 mode = 2
