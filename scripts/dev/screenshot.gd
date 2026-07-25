@@ -21,6 +21,10 @@ var _next: float = 0.0
 
 
 func _ready() -> void:
+	# Must keep ticking while the tree is paused, or --shot-pause deadlocks:
+	# pausing stops this node's _process, so the capture never happens and the
+	# run never quits.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	var args := OS.get_cmdline_args()
 	for i in args.size():
 		if args[i] == "--shot-delay" and i + 1 < args.size():
@@ -37,7 +41,17 @@ func _ready() -> void:
 		_open_wiki.call_deferred()
 	if args.has("--shot-mod"):
 		_open_mod.call_deferred()
+	if args.has("--shot-pause"):
+		# the pause screen is only reachable by keypress, same problem as the
+		# wiki and mod panel
+		_open_pause.call_deferred()
 	print("[SHOT] writing %d frames to %s" % [_count, OS.get_user_data_dir()])
+
+
+func _open_pause() -> void:
+	var main := get_parent()
+	if main != null and main.has_method("_toggle_pause"):
+		main._toggle_pause()
 
 
 func _open_wiki() -> void:

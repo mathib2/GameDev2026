@@ -79,6 +79,53 @@ def shrine(lit):
     return img
 
 
+def crate():
+    """The destructible crate — 24x24.
+
+    Worth the attention despite being scenery: a room holds up to sixteen of
+    them, so they occupy more screen area than anything except the floor. The
+    old one was five flat colours and read as a beige square. This one gets
+    plank seams, a lit top edge, a shaded underside, corner brackets and a
+    contact shadow, which is what makes it sit *on* the floor rather than
+    float against it.
+    """
+    S = 24
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img, "RGBA")
+
+    wood = (156, 106, 58)
+    wood_dk = (96, 60, 30)
+    wood_lt = (206, 152, 92)
+    wood_hi = (232, 190, 138)
+    edge = (54, 32, 18)
+    brass = (198, 158, 74)
+
+    d.ellipse([2, S - 5, S - 3, S - 1], fill=(0, 0, 0, 80))
+    d.rectangle([2, 3, S - 3, S - 3], fill=wood, outline=edge)
+
+    # three planks, each lit along its top and shaded along its base
+    for i in range(3):
+        y = 4 + i * 6
+        d.rectangle([3, y, S - 4, y + 5], fill=wood)
+        d.line([3, y, S - 4, y], fill=wood_lt)
+        d.line([3, y + 5, S - 4, y + 5], fill=wood_dk)
+        # grain
+        d.line([6 + i * 3, y + 2, 11 + i * 3, y + 2], fill=wood_dk)
+        d.line([13 - i * 2, y + 3, 17 - i * 2, y + 3], fill=wood_lt)
+
+    # diagonal brace catches the light
+    d.line([4, S - 5, S - 5, 5], fill=wood_lt, width=2)
+    d.line([5, S - 5, S - 4, 6], fill=wood_hi)
+
+    # corner brackets
+    for cx, cy in ((3, 4), (S - 7, 4), (3, S - 8), (S - 7, S - 8)):
+        d.rectangle([cx, cy, cx + 3, cy + 3], fill=brass, outline=wood_dk)
+    # lit top lip, dark base
+    d.line([2, 3, S - 3, 3], fill=wood_hi)
+    d.line([2, S - 3, S - 3, S - 3], fill=edge)
+    return img
+
+
 PALETTES = {
     "chest": dict(wood=(150, 96, 48), wood_dark=(84, 50, 24),
                   wood_light=(206, 150, 92), metal=(214, 178, 74),
@@ -106,6 +153,9 @@ def main():
     sheet.alpha_composite(shrine(True), (CELL, 0))
     sheet.save(os.path.join(out, "prop_shrine.png"))
     print(f"assets/environment/prop_shrine.png  ({CELL * 2}x{CELL}, 2 frames)")
+
+    crate().save(os.path.join(out, "prop_crate.png"))
+    print("assets/environment/prop_crate.png  (24x24)")
 
 
 if __name__ == "__main__":

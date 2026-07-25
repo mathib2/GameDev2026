@@ -87,6 +87,9 @@ func _dress_main_menu(full: bool = true) -> void:
 	if full:
 		add_child(logo)
 		move_child(logo, 1)
+	else:
+		# never parented in this mode; free it or it lingers as an orphan
+		logo.queue_free()
 
 	# the note sits behind the buttons; the CenterContainer centres both
 	var note := TextureRect.new()
@@ -96,7 +99,12 @@ func _dress_main_menu(full: bool = true) -> void:
 	note.set_anchors_preset(Control.PRESET_FULL_RECT)
 	note.offset_top = 104
 	add_child(note)
-	move_child(note, 2)
+	# Immediately BEHIND the Panel, computed rather than a fixed index: the
+	# main menu also inserts a background and a logo first, so a hard-coded 2
+	# was correct there and landed *in front of* the Panel for pause and
+	# game-over — which drew the note over every button and left the pause
+	# screen a blank sheet of paper.
+	move_child(note, $Panel.get_index())
 
 	var vbox: VBoxContainer = $Panel/VBox
 	vbox.add_theme_constant_override("separation", 2)
