@@ -128,10 +128,22 @@ func _make_door(dir: String) -> void:
 		"l": area.position = Vector2(8, H * 0.5)
 		"r": area.position = Vector2(W - 8, H * 0.5)
 	add_child(area)
-	area.body_entered.connect(func(b: Node) -> void:
-		if b.is_in_group("player"):
-			RunManager.travel(dir))
 	_doors.append({"dir": dir, "area": area})
+
+
+func _physics_process(_delta: float) -> void:
+	# Doors poll instead of using one-shot body_entered: if the player
+	# reaches a door during the brief post-travel lock, the entered event
+	# fires once, gets refused, and never fires again while they stand in
+	# the trigger — a dead door and a soft-locked run. Polling can't miss.
+	for d in _doors:
+		var area: Area2D = d["area"]
+		if not area.monitoring:
+			continue
+		for b in area.get_overlapping_bodies():
+			if b.is_in_group("player"):
+				RunManager.travel(d["dir"])
+				return
 
 
 func _scatter_decor() -> void:

@@ -34,6 +34,8 @@ func _ready() -> void:
 		call_deferred("start_run")
 	if OS.get_cmdline_args().has("--smoketest"):
 		add_child(load("res://scripts/dev/smoke_test.gd").new())
+	if OS.get_cmdline_args().has("--walktest"):
+		add_child(load("res://scripts/dev/walk_test.gd").new())
 
 
 func _unhandled_input(event: InputEvent) -> void:
