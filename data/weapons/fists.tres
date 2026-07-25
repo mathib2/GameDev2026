@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/weapon_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/items/wpn_fists.png" id="2_icon"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/player_punch.wav" id="3_use"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/impact_heavy.wav" id="4_hit"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"fists"
+display_name = "Fists"
+description = "Yours. Enormous."
+icon = ExtResource("2_icon")
+kind = 0
+damage = 3.0
+cooldown = 0.32
+reach = 46.0
+arc_degrees = 120.0
+knockback = 200.0
+shake = 3.0
+hitstop = 0.05
+sfx_use = ExtResource("3_use")
+sfx_hit = ExtResource("4_hit")

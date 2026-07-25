@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/weapon_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/items/wpn_toy_gun.png" id="2_icon"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/player_punch.wav" id="3_use"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/impact_heavy.wav" id="4_hit"]
+[ext_resource type="Texture2D" path="res://assets/effects/fx_fist.png" id="5_proj"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"toy_gun"
+display_name = "Toy Gun"
+description = "It fires actual bullets. Nobody knows why."
+icon = ExtResource("2_icon")
+kind = 1
+damage = 2.0
+cooldown = 0.16
+projectile_speed = 460.0
+projectile_range = 320.0
+knockback = 70.0
+shake = 1.5
+hitstop = 0.02
+sfx_use = ExtResource("3_use")
+sfx_hit = ExtResource("4_hit")
+projectile_texture = ExtResource("5_proj")

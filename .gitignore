@@ -18,11 +18,32 @@ obj/
 # Dependencies
 node_modules/
 
-# Engine-specific (uncomment as needed)
-# Unity
-# Library/
-# Temp/
-# Logs/
-# Godot
-# .godot/
-# .import/
+# ── Godot 4 ──────────────────────────────────────────────────────────────
+# Generated; committing it causes constant meaningless merge conflicts.
+.godot/
+.import/
+*.translation
+.mono/
+mono_crash.*.json
+
+# NOTE: per-asset `<file>.png.import` settings sit BESIDE the asset and are NOT
+# covered by `.import/` above. They MUST be committed so everyone imports
+# identically. Do not add `*.import` here.
+#
+# export_presets.cfg IS committed on purpose: it defines the Windows build and
+# contains no credentials. If anyone adds signing/store keys to it, move those
+# to a local override instead.
+
+# Build artefacts (the exported .exe is ~109 MB — never commit it)
+STUFFED-Windows/
+*.pck
+*.exe
+
+# ── Secrets ──────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.template
+*.pem
+*.key
+*.keystore
+*.p12

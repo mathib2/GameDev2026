@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/enemies/enemy_bunny.png" id="2_sheet"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/teddy_squeak.wav" id="3_attack"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/enemy_death.wav" id="4_death"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"bunny"
+display_name = "Stuffed Bunny"
+spritesheet = ExtResource("2_sheet")
+frame_size = Vector2i(32, 32)
+sprite_offset = Vector2(0, -16)
+max_health = 7.0
+move_speed = 44.0
+contact_damage = 1
+behaviour = 5
+attack_cooldown = 1.3
+sfx_attack = ExtResource("3_attack")
+sfx_death = ExtResource("4_death")
+idle_sound_chance = 0.2

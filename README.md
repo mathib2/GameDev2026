@@ -1,28 +1,144 @@
-# GameDev2026
+# STUFFED
 
-A collaborative game development project.
+A top-down action roguelike. You are an enormous, extremely hairy man in a
+white tank top, and everything trying to kill you is a toy.
 
-## Branches
+The game plays it completely straight. The Teddy Bear King gets a screen shake,
+a title card and a dramatic sting — and then he squeaks. That contrast is the
+whole point, so nothing in the game ever acknowledges the joke.
 
-| Branch | Owner |
-|--------|-------|
-| `master` | Shared / integration branch |
-| `Edwin` | Edwin's working branch |
-| `Angel` | Angel's working branch |
-| `Agustin` | Agustin's working branch |
-| `Mathias` | Mathias's working branch |
+> Godot 4.x port and expansion of the HTML prototype on `master`
+> (`stuffed/index.html`), which remains there as reference.
 
-## Workflow
+---
 
-1. Each person works on their own branch (`Edwin`, `Angel`, `Agustin`, `Mathias`).
-2. Commit and push your changes to your own branch.
-3. Open a pull request into `master` when a feature is ready.
-4. Review together, then merge into `master`.
+## Play it
 
-## Getting Started
+**Prebuilt Windows binary:** see [Building](#building) — the export is not
+committed (a 109 MB binary does not belong in git).
+
+**From source:**
+
+1. Install **Godot 4.3+** (built and tested with 4.7.1, standard build, no C#).
+2. Open Godot → *Import* → select `project.godot`.
+3. Press **F5**.
+
+| Input | Action |
+|---|---|
+| `WASD` | move |
+| Mouse / arrow keys | aim |
+| Left click or `J` | attack |
+| `Space` | dodge roll (i-frames) |
+| `E` | pick up item |
+| `Esc` | pause |
+
+Movement is tuned for weight without sluggishness: high acceleration so input
+registers instantly, lower friction so he keeps sliding a moment after you let
+go. The dodge roll is the skill expression.
+
+---
+
+## The run
+
+`Start → explore rooms → fight → collect → get stronger → boss → descend`
+
+Four floors: **The Nursery → The Playroom → The Attic → The Toy Factory**.
+Each floor is procedurally generated — a random walk that promotes dead ends to
+special rooms, so the boss is always the furthest point from the start.
+
+**Room types:** combat · treasure · shop · elite · secret · boss
+
+**Ten enemies**, each with idle/walk/attack/hurt/death animations and its own
+movement archetype:
+
+| | | |
+|---|---|---|
+| Teddy Bear — chases | Gingerbread Man — sprints in bursts | Rubber Duck — drifts and squeaks |
+| Toy Soldier — holds range and shoots | Baby Rattle — radial shockwaves | Stuffed Bunny — leaps |
+| Wind-Up Teeth — bounces off walls | Porcelain Doll — slow, relentless, tanky | Toy Car — telegraphs, then charges |
+| Building Block — stationary, fires spreads | | |
+
+**Boss: THE TEDDY BEAR KING.** Three phases, each *adding* an attack rather
+than replacing one — slam, barrage, summon, charge — so it visibly escalates.
+
+**Six weapons** (fists, bat, sledgehammer, toy gun, nail gun, shotgun) and
+**ten items** (Protein Shake, Giant Steak, Angry Coffee, Dad's Old Belt,
+Mystery Meat, Golden Dumbbell, Tiny Teddy Bear, Lucky Sock, Energy Drink,
+Steel Toecaps).
+
+---
+
+## Project structure
+
+```
+assets/     characters/ enemies/ bosses/ environment/ items/ effects/ audio/
+data/       enemies/ weapons/ items/     ← the game's content, as .tres
+scenes/     player/ enemies/ bosses/ rooms/ items/ ui/ menus/
+scripts/    core/ player/ enemies/ bosses/ combat/ items/ levels/ ui/ dev/
+docs/       ARCHITECTURE · ADDING_CONTENT · ASSET_CREDITS
+tools/      validate_project.py
+```
+
+**The rule: core systems never contain content.** Adding an enemy, weapon or
+item is a `.tres` file, not a script edit. See
+[docs/ADDING_CONTENT.md](docs/ADDING_CONTENT.md).
+
+Seven autoloads: `EventBus` (signals only, no state), `GameState`, `ContentDB`,
+`AudioManager`, `GameFeel`, `Effects`, `RunManager`. Details in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+---
+
+## Art and audio
+
+All original — generated for this project. **The asset packs named in the brief
+could not be found anywhere** (see
+[docs/ASSET_CREDITS.md](docs/ASSET_CREDITS.md) for exactly where I looked).
+
+Swapping them in later is cheap by design: every character sheet uses one grid
+(rows = animations, columns = frames), so replacing a PNG in place needs no
+code change.
+
+---
+
+## Building
+
+Requires Godot **export templates** for 4.7.1 (*Editor → Manage Export
+Templates*).
 
 ```bash
-git clone https://github.com/<owner>/GameDev2026.git
-cd GameDev2026
-git checkout <your-name>   # e.g. git checkout Edwin
+godot --headless --export-release "Windows Desktop"
+# → ../STUFFED-Windows/STUFFED.exe
 ```
+
+`export_presets.cfg` is committed on purpose — it defines the build and holds
+no credentials. The output is gitignored.
+
+---
+
+## Testing
+
+```bash
+python3 tools/validate_project.py     # structure; no Godot needed
+godot --headless --autostart --smoketest --quit-after 8000
+```
+
+The smoke test drives a real run without input: generates a floor, walks every
+room, kills what it finds, fights the boss, and exits non-zero on failure. It
+catches what `--import` cannot, because it only fails once things actually
+spawn and interact — it is how the "exported build ships with zero content" bug
+was found.
+
+Neither check tells you the game *feels* good. Play it.
+
+---
+
+## Team
+
+| Branch | Owner |
+|---|---|
+| `master` | Shared / integration |
+| `stuffed-godot` | This Godot project |
+| `Edwin` / `Angel` / `Agustin` / `Mathias` | Personal working branches |
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
