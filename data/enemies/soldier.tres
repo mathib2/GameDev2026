@@ -22,3 +22,4 @@ projectile_speed = 120.0
 sfx_attack = ExtResource("3_attack")
 sfx_death = ExtResource("4_death")
 idle_sound_chance = 0.0
+min_floor = 1

@@ -13,6 +13,7 @@ const H := ROWS * TILE      # 384
 const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 const PICKUP_SCENE := preload("res://scenes/items/Pickup.tscn")
 const ITEM_PEDESTAL := preload("res://scenes/items/ItemPedestal.tscn")
+const WEAPON_PEDESTAL := preload("res://scenes/items/WeaponPedestal.tscn")
 const BOSS_SCENE := preload("res://scenes/bosses/TeddyBearKing.tscn")
 
 const FLOOR_TEX := preload("res://assets/environment/tiles_floor.png")
@@ -158,7 +159,11 @@ func populate(floor_index: int) -> void:
 		FloorGenerator.RoomKind.BOSS:
 			_spawn_boss(floor_index)
 		FloorGenerator.RoomKind.TREASURE:
-			_spawn_pedestal()
+			# Sometimes the treasure is a whole new weapon.
+			if _rng.randf() < 0.4:
+				_spawn_weapon_pedestal(Vector2(W * 0.5, H * 0.5))
+			else:
+				_spawn_pedestal()
 			_open_doors()
 		FloorGenerator.RoomKind.SHOP:
 			_spawn_shop()
@@ -216,14 +221,27 @@ func _spawn_boss(floor_index: int) -> void:
 	alive_enemies = 1
 
 
-func _spawn_pedestal() -> void:
+func _spawn_pedestal(pos: Vector2 = Vector2(W * 0.5, H * 0.5)) -> void:
 	var item := ContentDB.random_item()
 	if item == null:
 		return
 	var p := ITEM_PEDESTAL.instantiate()
-	add_child(p)
-	p.global_position = Vector2(W * 0.5, H * 0.5)
+	# fields before add_child: _ready() is what paints the icon and label
 	p.item = item
+	add_child(p)
+	p.global_position = pos
+
+
+func _spawn_weapon_pedestal(pos: Vector2, price: int = 0) -> void:
+	var current: StringName = GameState.weapon.id if GameState.weapon != null else &""
+	var w := ContentDB.random_weapon(current)
+	if w == null:
+		return
+	var p := WEAPON_PEDESTAL.instantiate()
+	p.weapon = w
+	p.price = price
+	add_child(p)
+	p.global_position = pos
 
 
 func _spawn_shop() -> void:
@@ -233,10 +251,10 @@ func _spawn_shop() -> void:
 		if item == null:
 			continue
 		var p := ITEM_PEDESTAL.instantiate()
-		add_child(p)
-		p.global_position = Vector2(W * 0.5 + slots[i], H * 0.5)
 		p.item = item
 		p.price = 12 + i * 4
+		add_child(p)
+		p.global_position = Vector2(W * 0.5 + slots[i], H * 0.5)
 
 
 func spawn_pickup(kind: String, pos: Vector2) -> void:
@@ -265,6 +283,22 @@ func mark_cleared() -> void:
 	# a cleared elite room owes you something
 	if info.kind == FloorGenerator.RoomKind.ELITE:
 		_spawn_pedestal()
+	elif info.kind == FloorGenerator.RoomKind.BOSS:
+		_boss_payout()
+
+
+func _boss_payout() -> void:
+	# A multi-phase fight owes you more than a staircase. The exit portal
+	# spawns at the centre, so the reward sits just above it.
+	var center := Vector2(W * 0.5, H * 0.5)
+	if _rng.randf() < 0.5:
+		_spawn_pedestal(center + Vector2(0, -70))
+	else:
+		_spawn_weapon_pedestal(center + Vector2(0, -70))
+	var coin_count := 6 + GameState.floor_index * 2
+	for i in coin_count:
+		var ang := TAU * float(i) / float(coin_count)
+		spawn_pickup("coin", center + Vector2.from_angle(ang) * _rng.randf_range(50.0, 90.0))
 
 
 func _open_doors() -> void:

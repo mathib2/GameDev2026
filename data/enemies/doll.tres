@@ -20,3 +20,4 @@ knockback_resist = 0.5
 sfx_hurt = ExtResource("3_hurt")
 sfx_death = ExtResource("4_death")
 idle_sound_chance = 0.0
+min_floor = 2

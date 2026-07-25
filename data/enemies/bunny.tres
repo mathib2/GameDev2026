@@ -20,3 +20,4 @@ attack_cooldown = 1.3
 sfx_attack = ExtResource("3_attack")
 sfx_death = ExtResource("4_death")
 idle_sound_chance = 0.2
+min_floor = 1

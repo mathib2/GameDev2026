@@ -24,3 +24,4 @@ sfx_attack = ExtResource("3_attack")
 sfx_death = ExtResource("4_death")
 sfx_idle = ExtResource("5_idle")
 idle_sound_chance = 0.15
+min_floor = 2

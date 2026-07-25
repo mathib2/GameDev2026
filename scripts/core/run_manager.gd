@@ -18,6 +18,7 @@ var player: Node2D
 var world: Node = null                 ## set by Main
 var _rng := RandomNumberGenerator.new()
 var _travelling: bool = false
+var _run_active: bool = false
 
 var music_game: AudioStream = preload("res://assets/audio/music/music_game.wav")
 var music_boss: AudioStream = preload("res://assets/audio/music/music_boss.wav")
@@ -28,6 +29,15 @@ var sfx_descend: AudioStream = preload("res://assets/audio/sfx/floor_descend.wav
 func _ready() -> void:
 	EventBus.enemy_died.connect(_on_enemy_died)
 	EventBus.boss_defeated.connect(_on_boss_defeated)
+	EventBus.run_ended.connect(func(_victory: bool) -> void: _run_active = false)
+	EventBus.player_died.connect(func() -> void: _run_active = false)
+
+
+func _process(delta: float) -> void:
+	# The victory screen shows run_time; someone has to actually tick it.
+	# Pausing stops this automatically (default pausable process mode).
+	if _run_active:
+		GameState.run_time += delta
 
 
 func start_run() -> void:
@@ -37,6 +47,7 @@ func start_run() -> void:
 	if fists != null:
 		GameState.equip(fists)
 	_rng.randomize()
+	_run_active = true
 	EventBus.run_started.emit()
 	_enter_floor(0)
 

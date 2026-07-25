@@ -45,8 +45,9 @@ func setup(victory: bool) -> void:
 			GameState.kills, GameState.coins, int(GameState.run_time)]
 	else:
 		_title.text = "STUFFED"
-		_subtitle.text = "they got you in %s\n%d toys torn open · %d coins" % [
-			RunManager.floor_name().to_lower(), GameState.kills, GameState.coins]
+		_subtitle.text = "they got you in %s\n%d toys torn open · %d coins · %ds" % [
+			RunManager.floor_name().to_lower(), GameState.kills, GameState.coins,
+			int(GameState.run_time)]
 
 
 func _on_primary() -> void:

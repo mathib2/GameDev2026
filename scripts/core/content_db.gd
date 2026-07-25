@@ -103,13 +103,23 @@ func random_item(exclude_owned: bool = true) -> ItemData:
 	return pool.back()
 
 
-func enemies_for_floor(index: int) -> Array:
-	# Early floors use the gentler toys; later floors open up everything.
-	var easy := [&"teddy", &"ginger", &"duck", &"windup"]
-	var all := enemies.keys()
+## Random equippable weapon, excluding fists and (optionally) one id —
+## usually whatever the player is already holding.
+func random_weapon(exclude: StringName = &"") -> WeaponData:
 	var pool: Array = []
-	for id in all:
-		if index <= 0 and not easy.has(id):
+	for w in weapons.values():
+		if w.id == &"fists" or w.id == exclude:
 			continue
-		pool.append(enemies[id])
+		pool.append(w)
+	if pool.is_empty():
+		return null
+	return pool[randi() % pool.size()]
+
+
+func enemies_for_floor(index: int) -> Array:
+	# Each enemy declares its own min_floor in data; core keeps no content lists.
+	var pool: Array = []
+	for e in enemies.values():
+		if e.min_floor <= index:
+			pool.append(e)
 	return pool if not pool.is_empty() else enemies.values()
