@@ -26,16 +26,50 @@ func _ready() -> void:
 		Mode.MAIN:
 			_title.text = "STUFFED"
 			_subtitle.text = "they were always going to come apart"
+			if SaveManager.runs > 0:
+				_subtitle.text += "\nbest: floor %d · %d toys torn open lifetime" % [
+					SaveManager.best_floor, SaveManager.lifetime_kills]
 			_primary.text = "START RUN"
 			_secondary.text = "QUIT"
+			_add_volume_controls()
 		Mode.PAUSE:
 			_title.text = "PAUSED"
 			_subtitle.text = ""
 			_primary.text = "RESUME"
 			_secondary.text = "QUIT TO MENU"
+			_add_volume_controls()
 		Mode.GAME_OVER:
 			_primary.text = "RUN IT BACK"
 			_secondary.text = "MAIN MENU"
+
+
+func _add_volume_controls() -> void:
+	var vbox: VBoxContainer = $Panel/VBox
+	for cfg in [["SFX", AudioManager.sfx_volume_db, true],
+			["MUSIC", AudioManager.music_volume_db, false]]:
+		var row := HBoxContainer.new()
+		var lab := Label.new()
+		lab.text = cfg[0]
+		lab.custom_minimum_size = Vector2(52, 0)
+		row.add_child(lab)
+		var slider := HSlider.new()
+		slider.min_value = 0.0
+		slider.max_value = 1.0
+		slider.step = 0.02
+		slider.value = db_to_linear(cfg[1])
+		slider.custom_minimum_size = Vector2(140, 16)
+		slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var is_sfx: bool = cfg[2]
+		slider.value_changed.connect(func(v: float) -> void:
+			var db := linear_to_db(maxf(v, 0.001)) if v > 0.0 else -80.0
+			if is_sfx:
+				SaveManager.set_sfx_volume_db(db)
+				AudioManager.play_sfx(sfx_select, 0.05, -6.0)
+			else:
+				SaveManager.set_music_volume_db(db))
+		row.add_child(slider)
+		vbox.add_child(row)
 
 
 func setup(victory: bool) -> void:

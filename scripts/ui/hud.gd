@@ -20,6 +20,8 @@ extends CanvasLayer
 const HEART_TEX := preload("res://assets/items/pickup_heart.png")
 
 var _toast_time: float = 0.0
+var _weapon_icon: TextureRect = null
+var _boss_fill_base: Color
 
 
 func _ready() -> void:
@@ -27,6 +29,20 @@ func _ready() -> void:
 	_intro.visible = false
 	_toast.visible = false
 	_flash.color.a = 0.0
+	_boss_fill_base = _boss_fill.color
+
+	# equipped-weapon slot next to the item strip
+	_weapon_icon = TextureRect.new()
+	_weapon_icon.custom_minimum_size = Vector2(18, 18)
+	_weapon_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	$Root/Top.add_child(_weapon_icon)
+	EventBus.weapon_equipped.connect(func(w: WeaponData) -> void:
+		_weapon_icon.texture = w.icon if w != null else null
+		_weapon_icon.tooltip_text = w.display_name if w != null else "")
+
+	EventBus.room_cleared.connect(_on_room_cleared)
+	EventBus.boss_phase_changed.connect(func(p: int) -> void:
+		_boss_fill.color = Color(1, 0.55, 0.25) if p == 2 else Color(1, 0.3, 0.3))
 
 	EventBus.player_damaged.connect(func(_a, _h, _m): _rebuild_hearts())
 	EventBus.player_healed.connect(func(_h, _m): _rebuild_hearts())
@@ -99,10 +115,18 @@ func _on_flash(colour: Color, _duration: float) -> void:
 	_flash.color = colour
 
 
+func _on_room_cleared(room: Node) -> void:
+	# bosses have their own fanfare
+	if room.info != null and room.info.kind != FloorGenerator.RoomKind.BOSS:
+		_on_toast("CLEAR", Color(0.7, 1, 0.75))
+		_toast_time = 1.2
+
+
 func _on_boss_spawned(_b: Node, display_name: String) -> void:
 	_boss_bar.visible = true
 	_boss_name.text = display_name
 	_boss_fill.scale.x = 1.0
+	_boss_fill.color = _boss_fill_base
 
 
 func _on_boss_health(fraction: float) -> void:

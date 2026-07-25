@@ -24,6 +24,7 @@ var _idle_noise: float = 0.0
 var _home: Vector2
 var _charge_dir: Vector2 = Vector2.RIGHT
 var _hop_vel: Vector2 = Vector2.ZERO
+var _telegraph: Line2D = null
 
 @onready var anim: SheetAnimator = $SheetAnimator
 
@@ -174,9 +175,11 @@ func _think(delta: float) -> void:
 				&"wind":
 					velocity = -_charge_dir * 24.0     # pulls back before launching
 					_charge_dir = _charge_dir.lerp(dir, 0.04).normalized()
+					_show_charge_telegraph(true)
 					if _state_timer <= 0.0:
 						_phase = &"charge"
 						_state_timer = 0.85
+						_show_charge_telegraph(false)
 						AudioManager.play_sfx(data.sfx_attack, 0.1)
 				&"charge":
 					velocity = _charge_dir * spd * 4.2
@@ -193,6 +196,22 @@ func _think(delta: float) -> void:
 				_cooldown = data.attack_cooldown
 				_fire_spread(dir, 3, 40.0)
 				_attack_anim()
+
+
+## A faint lane along the charge direction so the toy car reads before
+## it commits. Created lazily, reused, hidden outside the wind-up.
+func _show_charge_telegraph(show: bool) -> void:
+	if show:
+		if _telegraph == null:
+			_telegraph = Line2D.new()
+			_telegraph.width = 3.0
+			_telegraph.default_color = Color(1.0, 0.35, 0.3, 0.35)
+			_telegraph.z_index = -1
+			add_child(_telegraph)
+		_telegraph.points = PackedVector2Array([Vector2.ZERO, _charge_dir * 130.0])
+		_telegraph.visible = true
+	elif _telegraph != null:
+		_telegraph.visible = false
 
 
 func _fire_spread(dir: Vector2, count: int, spread_deg: float) -> void:

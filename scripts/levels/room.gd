@@ -146,11 +146,10 @@ func _scatter_decor() -> void:
 			continue
 		if absi(tx - COLS / 2) <= 1 or absi(ty - ROWS / 2) <= 1:
 			continue
-		var s := Sprite2D.new()
-		s.texture = CRATE_TEX
-		s.position = Vector2(tx * TILE + 16, ty * TILE + 16)
-		s.z_index = 1
-		add_child(s)
+		var crate := preload("res://scripts/levels/breakable.gd").new()
+		crate.position = Vector2(tx * TILE + 16, ty * TILE + 16)
+		crate.z_index = 1
+		add_child(crate)
 
 
 # ── population ────────────────────────────────────────────────────────────

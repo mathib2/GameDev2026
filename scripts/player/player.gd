@@ -121,7 +121,7 @@ func _handle_attack() -> void:
 
 func _melee(w: WeaponData) -> void:
 	var hit_any := false
-	for body in get_tree().get_nodes_in_group("enemy"):
+	for body in get_tree().get_nodes_in_group("enemy") + get_tree().get_nodes_in_group("breakable"):
 		if not is_instance_valid(body) or not (body is Node2D):
 			continue
 		var to: Vector2 = body.global_position - global_position

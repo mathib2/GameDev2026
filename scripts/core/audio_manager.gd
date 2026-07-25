@@ -18,6 +18,9 @@ var music_volume_db: float = -12.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# the music leans in slightly as a boss loses composure
+	EventBus.boss_phase_changed.connect(func(p: int) -> void:
+		_music.pitch_scale = 1.0 + 0.05 * float(p - 1))
 	_music = AudioStreamPlayer.new()
 	_music.volume_db = music_volume_db
 	add_child(_music)
@@ -52,6 +55,7 @@ func play_music(stream: AudioStream, restart_if_same: bool = false) -> void:
 		return
 	_music.stream = stream
 	_music.volume_db = music_volume_db
+	_music.pitch_scale = 1.0
 	_music.play()
 
 
@@ -66,3 +70,13 @@ func duck_music(db: float = -18.0) -> void:
 
 func restore_music() -> void:
 	_music.volume_db = music_volume_db
+
+
+func set_sfx_volume_db(db: float) -> void:
+	sfx_volume_db = db
+
+
+func set_music_volume_db(db: float) -> void:
+	music_volume_db = db
+	if _music != null:
+		_music.volume_db = db

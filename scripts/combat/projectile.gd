@@ -59,6 +59,13 @@ func _physics_process(delta: float) -> void:
 func _on_hit(node: Node) -> void:
 	if node == null or node in _hit:
 		return
+	# cover stops shots from either side, and breaks doing it
+	if node.is_in_group("breakable"):
+		_hit.append(node)
+		if node.has_method("take_damage"):
+			node.take_damage(damage, global_position, false, 0.0)
+		_expire()
+		return
 	if friendly:
 		if not node.is_in_group("enemy"):
 			return
