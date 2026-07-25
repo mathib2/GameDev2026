@@ -86,9 +86,32 @@ Bosses are bespoke enough to justify their own script. Copy
 - do the intro straight: `boss_intro_started`, a big shake, a serious sting.
   **Then** the squeak. The game must never acknowledge the joke.
 
-Spawn it from `Room._spawn_boss()`.
+There is one boss per floor: `Room.BOSS_SCENES` is indexed by `floor_index`,
+not cycled. To add a fifth, write the script and scene, append it to that list,
+and give it a floor to live on in `RunManager.FLOOR_NAMES` — the smoke test
+derives its pass criteria from `total_floors()`, so it starts requiring the new
+boss automatically rather than silently skipping it.
+
+Art: `tools/build_bosses.py` draws the 5x5 96px sheets procedurally. Add a draw
+function plus a `*_params` function returning per-frame values, and add both to
+the tuple in `main()`.
 
 ---
+
+## Add a skill
+
+One entry in `GameState.SKILLS`:
+
+```gdscript
+&"greed": {"name": "GREED", "blurb": "+1 coin per pickup",
+    "mods": {&"coin_bonus": 1}},
+```
+
+`mods` uses the same keys as items (`_mult` multiplies, everything else adds)
+and is applied once per level, capped at `SKILL_MAX`. Add a colour to
+`TINTS` in `scripts/items/skill_shrine.gd` so its shrine is distinguishable —
+that is the only other place that needs touching, and shops pick which two
+skills to stock at random.
 
 ## Add a room type
 
@@ -104,11 +127,13 @@ rooms cannot conflict.
 ## Testing your change
 
 ```bash
-# structural check, no Godot needed
-python3 tools/validate_project.py
+# real gameplay: generates every floor, clears them, fights every boss,
+# and checks the skill economy. This is the gate.
+godot --headless --autostart --smoketest --quit-after 200000
 
-# real gameplay: generates a floor, clears it, fights the boss
-godot --headless --autostart --smoketest --quit-after 8000
+# look at it without playing it — writes PNGs to the user data dir.
+# Needs a real window; --headless renders nothing to capture.
+godot --autostart --screenshot --shot-delay 6 --shot-count 3
 ```
 
 The smoke test exits non-zero on failure and is what CI runs. It catches things

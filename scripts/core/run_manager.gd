@@ -133,9 +133,20 @@ func travel(dir: String) -> void:
 	var next = generator.neighbour(current_info, dir)
 	if next == null:
 		return
+	# Set the lock synchronously: door triggers poll every physics frame, so a
+	# deferred build would otherwise be queued several times before it runs.
 	_travelling = true
 	AudioManager.play_sfx(sfx_door)
 	current_info = next
+	_finish_travel.call_deferred(next, dir)
+
+
+## Building a room registers hundreds of wall, crate and enemy collision
+## shapes. Doors poll from _physics_process and the exit portal fires from
+## body_entered, so a direct call does all of that inside a physics flush and
+## Godot rejects every single one with "Can't change this state while flushing
+## queries". Bouncing to idle once fixes the whole class of error.
+func _finish_travel(next, dir: String) -> void:
 	_load_room(next, dir)
 	# brief lock so you cannot immediately re-trigger the door you arrived at
 	await get_tree().create_timer(0.25).timeout
@@ -175,7 +186,8 @@ func spawn_exit() -> void:
 	exit.add_child(s)
 
 	exit.position = Vector2(current_room.W * 0.5, current_room.H * 0.5)
-	current_room.add_child(exit)
+	# reached from boss_defeated, which fires mid-physics — see _finish_travel
+	current_room.add_child.call_deferred(exit)
 	exit.body_entered.connect(func(b: Node) -> void:
 		if b.is_in_group("player"):
 			_descend())
@@ -192,6 +204,11 @@ func _descend() -> void:
 		EventBus.run_ended.emit(true)
 		_travelling = false
 		return
+	# same reason as _finish_travel: this arrives from the portal's body_entered
+	_finish_descend.call_deferred(next)
+
+
+func _finish_descend(next: int) -> void:
 	_enter_floor(next)
 	await get_tree().create_timer(0.3).timeout
 	_travelling = false

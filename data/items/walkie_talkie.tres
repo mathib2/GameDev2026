@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/items/item_walkie_talkie.png" id="2_icon"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"walkie_talkie"
+display_name = "Walkie Talkie"
+description = "Crit chance up."
+flavour = "something answers"
+icon = ExtResource("2_icon")
+modifiers = {&"crit_chance": 0.12, &"damage_flat": 0.5}
+random_effect = false
+weight = 0.75
+unique = true
+sfx_pickup = ExtResource("3_sfx")

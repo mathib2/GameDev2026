@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/items/item_growth_spurt.png" id="2_icon"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"growth_spurt"
+display_name = "Growth Spurt"
+description = "Health up, speed down."
+flavour = "worth it probably"
+icon = ExtResource("2_icon")
+modifiers = {&"max_health": 3, &"speed_mult": 0.88}
+random_effect = false
+weight = 0.7
+unique = true
+sfx_pickup = ExtResource("3_sfx")

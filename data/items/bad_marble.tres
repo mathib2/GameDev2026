@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/items/item_bad_marble.png" id="2_icon"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"bad_marble"
+display_name = "Bad Marble"
+description = "Contact armour up."
+flavour = "it looks back"
+icon = ExtResource("2_icon")
+modifiers = {&"contact_armour": 1, &"speed_mult": 1.05}
+random_effect = false
+weight = 0.6
+unique = true
+sfx_pickup = ExtResource("3_sfx")

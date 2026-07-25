@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/weapon_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/items/wpn_banana.png" id="2_icon"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/player_swing.wav" id="3_use"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/ginger_crunch.wav" id="4_hit"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"banana"
+display_name = "Banana"
+description = "Potassium. Devastating in the right hands."
+icon = ExtResource("2_icon")
+kind = 0
+damage = 2.5
+cooldown = 0.2
+arc_degrees = 120.0
+reach = 44.0
+knockback = 150.0
+crit_chance = 0.35
+crit_multiplier = 3.0
+shake = 2.0
+hitstop = 0.04
+sfx_use = ExtResource("3_use")
+sfx_hit = ExtResource("4_hit")

@@ -18,6 +18,10 @@ var music_death: AudioStream = preload("res://assets/audio/music/music_death.wav
 
 func _ready() -> void:
 	RunManager.world = world
+	# added in code rather than in Main.tscn so the layer ordering against the
+	# HUD is stated where it is explained
+	add_child(load("res://scripts/ui/vignette.gd").new())
+	add_child(load("res://scripts/ui/story.gd").new())
 	hud.visible = false
 	pause.visible = false
 	over.visible = false
@@ -36,6 +40,8 @@ func _ready() -> void:
 		add_child(load("res://scripts/dev/smoke_test.gd").new())
 	if OS.get_cmdline_args().has("--walktest"):
 		add_child(load("res://scripts/dev/walk_test.gd").new())
+	if OS.get_cmdline_args().has("--screenshot"):
+		add_child(load("res://scripts/dev/screenshot.gd").new())
 
 
 func _unhandled_input(event: InputEvent) -> void:

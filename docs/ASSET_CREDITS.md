@@ -2,9 +2,29 @@
 
 ## Summary
 
-**Every asset in this repository is original, generated for this project.**
-There is no third-party content, and therefore no third-party licence to
-comply with.
+Almost everything here is original, generated for this project. There is
+exactly one third-party source, recorded below.
+
+## Third-party assets
+
+| Asset | Creator | Source | Licence | Used for |
+|---|---|---|---|---|
+| Weapon Pack - FREE (`anim-bullet.png`) | VladPenn | https://vladpenn.itch.io/weapon | *"Feel free to use it in any free/commercial game, if you want to credit me, that would be nice :)"* — free for commercial use, attribution optional (given here) | Silhouettes for the toy weapons, artifacts and projectiles in `assets/items/`, `assets/effects/`, `assets/environment/prop_books.png` |
+
+The unmodified sheet is kept at `assets/third_party/vladpenn_weapon_pack.png`
+so the derivation is reproducible. **The pack is a modern-military set** — the
+sprites are recoloured through plastic ramps by
+`tools/build_weapon_assets.py` before use, because a photoreal AK belongs in a
+different game than this one. Shapes are the creator's; palettes are ours.
+
+To regenerate after changing a pick:
+
+```bash
+python3 tools/build_weapon_assets.py assets/third_party/vladpenn_weapon_pack.png
+```
+
+`tools/extract_pack.py` splits a sheet into numbered sprites plus a contact
+sheet, which is how you find the index to put in the `PICKS` table.
 
 ## Why the provided asset packs were not used
 

@@ -41,6 +41,67 @@ func spawn_burst(parent: Node, pos: Vector2, colour: Color, count: int = 10,
 	t.tween_callback(p.queue_free)
 
 
+## White stuffing — what comes out of a toy instead of blood.
+##
+## Deliberately floatier than spawn_burst: low gravity and heavy damping so the
+## wadding hangs in the air and drifts down, rather than arcing like debris.
+## This is the single most important visual in the game, because it is what
+## sells "these are toys" every time something dies.
+func spawn_stuffing(parent: Node, pos: Vector2, count: int = 10,
+		speed: float = 80.0, size: float = 3.0) -> void:
+	if parent == null or not is_instance_valid(parent):
+		return
+	var p := CPUParticles2D.new()
+	p.position = pos
+	p.emitting = true
+	p.one_shot = true
+	p.explosiveness = 0.92
+	p.amount = count
+	p.lifetime = 0.9
+	p.direction = Vector2.UP
+	p.spread = 180.0
+	p.initial_velocity_min = speed * 0.35
+	p.initial_velocity_max = speed
+	p.gravity = Vector2(0, 48)
+	p.scale_amount_min = size
+	p.scale_amount_max = size * 1.8
+	p.damping_min = 70.0
+	p.damping_max = 130.0
+	p.angular_velocity_min = -180.0
+	p.angular_velocity_max = 180.0
+	p.color = Color(1, 1, 1)
+	# fade the wadding out rather than letting it vanish mid-air
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(1, 1, 1, 1))
+	ramp.set_color(1, Color(0.94, 0.94, 0.9, 0.0))
+	p.color_ramp = ramp
+	parent.add_child(p)
+	var t := p.create_tween()
+	t.tween_interval(1.5)
+	t.tween_callback(p.queue_free)
+
+
+## Expanding white ring. Punctuates a kill so it reads even in a crowd.
+func spawn_pop(parent: Node, pos: Vector2, size: float = 2.4) -> void:
+	if parent == null or not is_instance_valid(parent):
+		return
+	var s := Sprite2D.new()
+	s.texture = IMPACT_TEX
+	s.hframes = 4
+	s.frame = 1
+	s.position = pos
+	s.z_index = 45
+	s.scale = Vector2(0.4, 0.4)
+	s.modulate = Color(1, 1, 1, 0.95)
+	parent.add_child(s)
+	var t := s.create_tween()
+	t.set_parallel(true)
+	t.tween_property(s, "scale", Vector2(size, size), 0.28)\
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	t.tween_property(s, "modulate:a", 0.0, 0.28)
+	t.chain().tween_callback(s.queue_free)
+
+
 func spawn_impact(parent: Node, pos: Vector2) -> void:
 	if parent == null or not is_instance_valid(parent):
 		return

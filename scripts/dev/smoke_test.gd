@@ -36,8 +36,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_elapsed += delta
-	# hard time budget so the test always reports instead of exploring forever
-	if _elapsed > 70.0:
+	# hard time budget so the test always reports instead of exploring forever.
+	# Scales with the floor count — a four-floor run needs roughly twice the
+	# wall clock a two-floor one did.
+	if _elapsed > 45.0 * float(RunManager.total_floors()):
 		_report_and_quit()
 		return
 	_step += delta
@@ -66,9 +68,11 @@ func _process(delta: float) -> void:
 		RunManager.travel(d)
 		return
 
-	# floor exhausted — walk back to the boss room and ride the exit portal
-	# down so the second floor's boss (the roster alternates) runs too
-	if _bosses_killed >= 1 and _floors_seen < 2:
+	# Floor exhausted — walk back to the boss room and ride the exit portal
+	# down, repeating until the run is out of floors. There is one boss per
+	# floor, so descending all of them is the only way every boss script
+	# actually gets executed; stopping at two silently skipped the rest.
+	if _bosses_killed >= 1 and _floors_seen < RunManager.total_floors():
 		var here = RunManager.current_info
 		if here != null and here.kind == FloorGenerator.RoomKind.BOSS:
 			if RunManager.player != null:
@@ -121,6 +125,31 @@ func _bfs_step(want: Callable) -> String:
 	return ""
 
 
+## Skills are bought by walking into a shrine, which this test never does — it
+## clears rooms by calling take_damage() directly. So exercise the economy
+## here instead: it is pure state, and a silent break in it would otherwise
+## ship unnoticed.
+func _check_skills() -> void:
+	var before_dmg := GameState.stat("damage_mult")
+	var cost := GameState.skill_cost(&"power")
+	GameState.coins = cost
+	if not GameState.upgrade_skill(&"power"):
+		_failures.append("could not buy POWER with exactly its cost in coins")
+		return
+	if GameState.skill_level(&"power") != 1:
+		_failures.append("POWER did not reach level 1 after purchase")
+	if GameState.stat("damage_mult") <= before_dmg:
+		_failures.append("POWER did not raise damage_mult")
+	if GameState.coins != 0:
+		_failures.append("skill purchase did not spend the coins")
+	# and the guard: no coins, no level
+	if GameState.upgrade_skill(&"power"):
+		_failures.append("bought a skill level with 0 coins")
+	print("[SMOKE] skills:        power lvl %d, damage_mult %.2f -> %.2f"
+		% [GameState.skill_level(&"power"), before_dmg,
+		   GameState.stat("damage_mult")])
+
+
 func _report_and_quit() -> void:
 	print("[SMOKE] rooms entered: %d" % _visited)
 	print("[SMOKE] floors seen:   %d" % _floors_seen)
@@ -128,10 +157,18 @@ func _report_and_quit() -> void:
 	print("[SMOKE] bosses killed: %d" % _bosses_killed)
 	print("[SMOKE] kills:         %d" % GameState.kills)
 
+	_check_skills()
+
+	var want := RunManager.total_floors()
 	if _visited < 3: _failures.append("visited fewer than 3 rooms")
 	if GameState.kills <= 0: _failures.append("killed nothing")
-	if _floors_seen < 2: _failures.append("never descended to floor 2")
-	if _bosses_killed < 2: _failures.append("second floor's boss not killed")
+	# Every floor has its own boss script, and a boss script is the easiest
+	# thing in this project to break without noticing, so the gate is "all of
+	# them ran" rather than a fixed number.
+	if _floors_seen < want:
+		_failures.append("only reached floor %d of %d" % [_floors_seen, want])
+	if _bosses_killed < want:
+		_failures.append("only killed %d of %d bosses" % [_bosses_killed, want])
 
 	if _failures.is_empty():
 		print("[SMOKE] PASS")

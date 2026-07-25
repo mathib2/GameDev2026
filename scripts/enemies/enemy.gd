@@ -284,7 +284,10 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO,
 	anim.play(&"hurt", true)
 	AudioManager.play_sfx(data.sfx_hurt if data != null and data.sfx_hurt else sfx_hit, 0.12)
 	Effects.spawn_damage_number(get_parent(), global_position, amount, crit)
-	Effects.spawn_burst(get_parent(), global_position, Color(0.87, 0.82, 0.7), 5, 70.0, 2.0)
+	# a puff of stuffing out of the wound, thrown away from the hit
+	Effects.spawn_stuffing(get_parent(), global_position, 6 if crit else 4,
+		95.0 if crit else 65.0, 2.0)
+	_squash(1.28, 0.78)
 	if from != Vector2.ZERO:
 		var push := (global_position - from).normalized() * knockback
 		_knockback += push * (1.0 - clampf(data.knockback_resist, 0.0, 0.95))
@@ -309,15 +312,37 @@ func _die() -> void:
 	$HurtBox.set_deferred("monitoring", false)
 	anim.play(&"death", true)
 	AudioManager.play_sfx(data.sfx_death if data != null and data.sfx_death else sfx_die, 0.14)
-	Effects.spawn_burst(get_parent(), global_position, Color(0.9, 0.85, 0.72), 16, 130.0, 3.0)
+	# the toy bursts: a ring to punctuate the kill, then the stuffing it was
+	# made of. No red anywhere — these are soft toys, not people.
+	Effects.spawn_pop(get_parent(), global_position, 2.2)
+	Effects.spawn_stuffing(get_parent(), global_position, 18, 135.0, 3.0)
 	EventBus.screen_shake.emit(2.0, 0.15)
 	GameState.kills += 1
 	EventBus.enemy_died.emit(self)
 	_drop_loot()
+
+	# deflate: pop wide, then collapse and sink as the last of it drifts out
 	var t := create_tween()
-	t.tween_interval(0.55)
-	t.tween_property(self, "modulate:a", 0.0, 0.25)
+	t.tween_property(anim, "scale", Vector2(1.35, 0.72), 0.10)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(anim, "rotation", randf_range(-0.5, 0.5), 0.55)
+	t.tween_property(anim, "scale", Vector2(0.86, 0.5), 0.45)\
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	t.parallel().tween_property(self, "modulate:a", 0.0, 0.45)
 	t.tween_callback(queue_free)
+
+
+## Quick non-uniform scale punch on the sprite, snapping back. Sells a hit
+## landing without touching the body's own scale, which elites and champions
+## already use to look bigger.
+func _squash(sx: float, sy: float) -> void:
+	if anim == null or is_dead:
+		return
+	var t := create_tween()
+	t.tween_property(anim, "scale", Vector2(sx, sy), 0.05)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(anim, "scale", Vector2.ONE, 0.11)\
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _drop_loot() -> void:

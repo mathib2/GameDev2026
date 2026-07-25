@@ -29,6 +29,28 @@ var item_rolls: Array[Dictionary] = []
 var weapon: WeaponData = null
 var _stats: Dictionary = {}
 
+## Skill levels bought at shrines, keyed by skill id.
+##
+## Items are *found*; skills are *chosen*. That difference is the point — it
+## gives a run a spine the player steers, instead of leaving the build entirely
+## to what the floor happened to drop. They stack with items through exactly
+## the same modifier path, so no stat code knows skills exist.
+const SKILLS := {
+	&"vitality": {"name": "VITALITY", "blurb": "+1 max health",
+		"mods": {&"max_health": 1}},
+	&"power": {"name": "POWER", "blurb": "+12% damage",
+		"mods": {&"damage_mult": 1.12}},
+	&"reflexes": {"name": "REFLEXES", "blurb": "+12% fire rate",
+		"mods": {&"fire_rate_mult": 1.12}},
+	&"footwork": {"name": "FOOTWORK", "blurb": "faster, quicker dodge",
+		"mods": {&"speed_mult": 1.06, &"dodge_cooldown_mult": 0.93}},
+	&"focus": {"name": "FOCUS", "blurb": "+5% crit",
+		"mods": {&"crit_chance": 0.05}},
+}
+const SKILL_MAX := 5
+
+var skills: Dictionary = {}   ## StringName -> int level
+
 ## What Mystery Meat can turn out to be. Mostly good. Mostly.
 const MEAT_ROLLS := [
 	{&"damage_mult": 1.3},
@@ -49,6 +71,7 @@ func _ready() -> void:
 func reset() -> void:
 	items.clear()
 	item_rolls.clear()
+	skills.clear()
 	coins = 0
 	floor_index = 0
 	kills = 0
@@ -66,6 +89,13 @@ func _recompute() -> void:
 		_apply_modifiers(items[i].modifiers)
 		if i < item_rolls.size():
 			_apply_modifiers(item_rolls[i])
+	# skills ride the same modifier path, applied once per level
+	for id in skills:
+		if not SKILLS.has(id):
+			continue
+		var mods: Dictionary = SKILLS[id]["mods"]
+		for _lvl in int(skills[id]):
+			_apply_modifiers(mods)
 	EventBus.stat_changed.emit()
 
 
@@ -82,6 +112,40 @@ func _apply_modifiers(mods: Dictionary) -> void:
 
 func stat(key: String) -> float:
 	return float(_stats.get(key, 0.0))
+
+
+func skill_level(id: StringName) -> int:
+	return int(skills.get(id, 0))
+
+
+## Rises steeply so that maxing one skill costs about what spreading the same
+## coins across three would, and neither is the obvious play.
+func skill_cost(id: StringName) -> int:
+	var lvl := skill_level(id)
+	return 14 + lvl * 11 + floor_index * 3
+
+
+func skill_maxed(id: StringName) -> bool:
+	return skill_level(id) >= SKILL_MAX
+
+
+## Buys one level. Returns false (and spends nothing) if maxed or too poor.
+func upgrade_skill(id: StringName) -> bool:
+	if not SKILLS.has(id) or skill_maxed(id):
+		return false
+	var cost := skill_cost(id)
+	if coins < cost or not spend(cost):
+		return false
+	skills[id] = skill_level(id) + 1
+	var before := max_health()
+	_recompute()
+	# a max_health skill should hand over the health it just promised, not
+	# leave the player to go and find it
+	var gained := max_health() - before
+	if gained > 0:
+		health = mini(max_health(), health + gained)
+		EventBus.player_healed.emit(health, max_health())
+	return true
 
 
 func max_health() -> int:

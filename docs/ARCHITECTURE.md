@@ -81,18 +81,42 @@ Elites are picked from ordinary combat rooms on deeper floors.
 a `RoomInfo`. There is no hand-authored scene per room, so two people adding
 rooms cannot conflict.
 
+## Skills
+
+Items are *found*; skills are *bought*. `GameState.SKILLS` defines five, each
+capped at 5 levels, purchased by walking into a shrine in a shop room. They
+fold into `_recompute()` through the same modifier dictionary items use, so no
+stat code knows skills exist — a new skill is one entry in that constant.
+
+```
+BASE ──┐
+items ─┼─▶ _recompute() ──▶ stat("damage_mult")
+skills ┘   (applied once per level)
+```
+
+## Rewards
+
+| Thing | Where | Cost | Pays out |
+|---|---|---|---|
+| Item pedestal | treasure, shop, elite/boss clear | free or priced | one `ItemData` |
+| Weapon pedestal | treasure, boss clear | free | one `WeaponData` |
+| Wooden chest | 22% of cleared combat rooms | free | coins, sometimes a heart |
+| Gold chest | treasure rooms, shops | free / priced | an item or a weapon, plus coins |
+| Skill shrine | shops (2 of 5, random) | coins, rising per level | one permanent skill level |
+
+All of them are *walked into* rather than prompted — there is no interact key
+in this game, and adding one for a single feature would be worse than the
+duplication.
+
 ## Known gaps
 
 Honest list of what is scaffolded but unfinished:
 
-- **Weapons never drop.** Six exist and work; only `fists` is equipped. Needs a
-  weapon pedestal (the item pedestal is 90% of it).
-- **`mystery_meat` has `random_effect` set but no roll implemented** — it is
-  currently a no-op item.
 - **`tiny_teddy` grants stats instead of a companion.** `ItemData.companion_scene`
-  exists and is unused.
+  exists and `RunManager._on_item_collected` honours it, but no item sets it.
 - **No 3D elements** (section 16 was explicitly optional).
-- **One boss.** The Gingerbread General, Toy Box and Nursery are designed but
-  not built.
-- **No save system** — runs are not persisted.
-- **Shop rooms** price items but there is no dedicated shop UI.
+- **Shop rooms** price items but there is still no dedicated shop *UI* — the
+  shop is pedestals, shrines and a chest laid out in a room.
+- **The minimap** marks visited rooms and the boss, but not shops or treasure.
+- **Bosses do not scale past floor 4.** `SUB-BASEMENT n` floors reuse the
+  four-boss rotation with only the `floor_index` health multiplier.

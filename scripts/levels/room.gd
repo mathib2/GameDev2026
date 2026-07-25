@@ -14,11 +14,18 @@ const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 const PICKUP_SCENE := preload("res://scenes/items/Pickup.tscn")
 const ITEM_PEDESTAL := preload("res://scenes/items/ItemPedestal.tscn")
 const WEAPON_PEDESTAL := preload("res://scenes/items/WeaponPedestal.tscn")
-# One boss per floor, cycling: Nursery/Attic get the King, Playroom/Toy
-# Factory get the General. New bosses just join this list.
+const CHEST := preload("res://scripts/items/chest.gd")
+const SHRINE := preload("res://scripts/items/skill_shrine.gd")
+const BOOKS_TEX := preload("res://assets/environment/prop_books.png")
+# One boss per floor, indexed by floor. With four bosses and four floors a run
+# no longer repeats one, and each is matched to where it lives: the King rules
+# the Nursery, the General is baked in the Playroom, the Choir was packed away
+# in the Attic, and Jack never left the factory. New bosses just join the list.
 const BOSS_SCENES: Array[PackedScene] = [
 	preload("res://scenes/bosses/TeddyBearKing.tscn"),
 	preload("res://scenes/bosses/GingerbreadGeneral.tscn"),
+	preload("res://scenes/bosses/PorcelainChoir.tscn"),
+	preload("res://scenes/bosses/Jack.tscn"),
 ]
 
 const FLOOR_TEX := preload("res://assets/environment/tiles_floor.png")
@@ -196,6 +203,43 @@ func _scatter_decor() -> void:
 	else:
 		for t in pick:
 			_spawn_crate(Vector2(t.x * TILE + 16, t.y * TILE + 16))
+	_scatter_props()
+
+
+## Purely cosmetic clutter — no collision, no pickup, nothing to shoot. Rooms
+## built from one tileset read as the same room over and over; a few pieces of
+## junk against the walls is the cheapest fix for that. Kept out of the middle
+## and out of the door lanes so it never reads as something you can interact
+## with or get stuck on.
+func _scatter_props() -> void:
+	# Build the list of legal tiles first and sample from it, rather than
+	# guessing and rejecting: the room is only 8 tiles tall inside its walls, so
+	# reject-sampling threw away most candidates and usually placed nothing.
+	var spots: Array = []
+	for ty in range(1, ROWS - 1):
+		for tx in range(1, COLS - 1):
+			# hug the walls — clutter in open floor reads as something you can
+			# pick up, and gets in the way of a dodge
+			var edge: bool = tx <= 2 or tx >= COLS - 3 or ty <= 1 or ty >= ROWS - 2
+			if not edge:
+				continue
+			# never in a door lane
+			if absi(tx - COLS / 2) <= 1 or absi(ty - ROWS / 2) <= 1:
+				continue
+			spots.append(Vector2i(tx, ty))
+	spots.shuffle()
+
+	for i in mini(_rng.randi_range(3, 6), spots.size()):
+		var t: Vector2i = spots[i]
+		var s := Sprite2D.new()
+		s.texture = BOOKS_TEX
+		s.position = Vector2(t.x * TILE + 16, t.y * TILE + 20)
+		# knocked back and dimmed so it sits behind the action instead of
+		# competing with the crates, which are actually interactive
+		s.modulate = _tint * Color(0.62, 0.6, 0.66, 1.0)
+		s.flip_h = _rng.randf() < 0.5
+		s.z_index = -5
+		add_child(s)
 
 
 func _scatter_random() -> void:
@@ -233,9 +277,13 @@ func populate(floor_index: int) -> void:
 		FloorGenerator.RoomKind.BOSS:
 			_spawn_boss(floor_index)
 		FloorGenerator.RoomKind.TREASURE:
-			# Sometimes the treasure is a whole new weapon.
-			if _rng.randf() < 0.4:
+			# Sometimes the treasure is a whole new weapon, sometimes a chest
+			# you have to walk into to find out what is in it.
+			var roll := _rng.randf()
+			if roll < 0.3:
 				_spawn_weapon_pedestal(Vector2(W * 0.5, H * 0.5))
+			elif roll < 0.55:
+				_spawn_chest(Vector2(W * 0.5, H * 0.5), true, 0)
 			else:
 				_spawn_pedestal()
 			_open_doors()
@@ -324,7 +372,21 @@ func _spawn_weapon_pedestal(pos: Vector2, price: int = 0) -> void:
 	p.global_position = pos
 
 
+## Wooden chests are free consumables; gold ones cost coins and pay out
+## something that changes the run. `price` of 0 makes a gold chest free, which
+## is what a treasure room uses.
+func _spawn_chest(pos: Vector2, gold: bool = false, price: int = 0) -> void:
+	var c := CHEST.new()
+	c.gold = gold
+	c.price = price
+	c.position = pos
+	# mark_cleared() runs from enemy_died, i.e. mid-physics
+	add_child.call_deferred(c)
+
+
 func _spawn_shop() -> void:
+	# Three rows, front to back: items you can buy now, skills you invest in,
+	# and a chest at the back you probably cannot afford yet.
 	var slots := [-80.0, 0.0, 80.0]
 	var stocked: Array = []
 	for i in slots.size():
@@ -336,7 +398,25 @@ func _spawn_shop() -> void:
 		p.item = item
 		p.price = 12 + i * 4 + GameState.floor_index * 5
 		add_child(p)
-		p.global_position = Vector2(W * 0.5 + slots[i], H * 0.5)
+		p.global_position = Vector2(W * 0.5 + slots[i], H * 0.5 + 42)
+
+	# two of the five skills, picked per shop so no single run can max
+	# everything at one stall
+	var ids: Array = GameState.SKILLS.keys()
+	ids.shuffle()
+	for i in mini(2, ids.size()):
+		_spawn_shrine(Vector2(W * 0.5 + (-96.0 if i == 0 else 96.0), H * 0.5 - 30),
+			ids[i])
+
+	_spawn_chest(Vector2(W * 0.5, H * 0.5 - 52), true,
+		18 + GameState.floor_index * 6)
+
+
+func _spawn_shrine(pos: Vector2, id: StringName) -> void:
+	var s := SHRINE.new()
+	s.skill_id = id
+	s.position = pos
+	add_child.call_deferred(s)
 
 
 func spawn_pickup(kind: String, pos: Vector2) -> void:
@@ -368,6 +448,10 @@ func mark_cleared() -> void:
 		_spawn_pedestal(Vector2(W * 0.5 + 60, H * 0.5 - 50))
 	elif info.kind == FloorGenerator.RoomKind.BOSS:
 		_boss_payout()
+	elif info.kind == FloorGenerator.RoomKind.COMBAT and _rng.randf() < 0.22:
+		# an ordinary fight occasionally leaves a chest behind, so clearing a
+		# room you did not have to clear is sometimes worth it
+		_spawn_chest(Vector2(W * 0.5, H * 0.5 - 46))
 
 
 func _boss_payout() -> void:

@@ -18,6 +18,11 @@ obj/
 # Dependencies
 node_modules/
 
+# The asset generators under tools/ are Python; their bytecode cache is not
+# content. The scripts themselves ARE committed — the art is reproducible.
+__pycache__/
+*.pyc
+
 # ── Godot 4 ──────────────────────────────────────────────────────────────
 # Generated; committing it causes constant meaningless merge conflicts.
 .godot/

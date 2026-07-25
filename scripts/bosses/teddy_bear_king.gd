@@ -237,7 +237,7 @@ func take_damage(amount: float, from: Vector2 = Vector2.ZERO,
 	_hurt_flash = 0.07
 	AudioManager.play_sfx(sfx_hurt, 0.12, -4.0)
 	Effects.spawn_damage_number(get_parent(), global_position, amount, crit)
-	Effects.spawn_burst(get_parent(), global_position, Color(0.9, 0.86, 0.72), 6, 90.0, 2.5)
+	Effects.spawn_stuffing(get_parent(), global_position, 6, 90.0, 2.5)
 	EventBus.boss_health_changed.emit(clampf(health / max_health, 0.0, 1.0))
 
 	var f := health / max_health
@@ -253,7 +253,8 @@ func _advance_phase(p: int) -> void:
 	AudioManager.play_sfx(sfx_roar, 0.0, 0.0)
 	EventBus.screen_shake.emit(10.0, 0.7)
 	EventBus.flash.emit(Color(1, 0.9, 0.6, 0.30), 0.25)
-	Effects.spawn_burst(get_parent(), global_position, Color(0.92, 0.88, 0.74), 30, 200.0, 4.0)
+	Effects.spawn_pop(get_parent(), global_position, 3.0)
+	Effects.spawn_stuffing(get_parent(), global_position, 30, 200.0, 4.0)
 	EventBus.toast.emit("THE CROWN SLIPS" if p == 2 else "HE IS COMING APART",
 		Color(1, 0.55, 0.5))
 	_end_attack(0.5)
@@ -267,7 +268,8 @@ func _die() -> void:
 	AudioManager.play_sfx(sfx_death, 0.0, 3.0)
 	AudioManager.stop_music()
 	EventBus.screen_shake.emit(13.0, 1.2)
-	Effects.spawn_burst(get_parent(), global_position, Color(0.92, 0.88, 0.74), 46, 240.0, 5.0)
+	Effects.spawn_pop(get_parent(), global_position, 4.2)
+	Effects.spawn_stuffing(get_parent(), global_position, 46, 240.0, 5.0)
 	EventBus.boss_defeated.emit(self)
 	EventBus.toast.emit("THE TEDDY BEAR KING IS STUFFING", Color(1, 0.9, 0.5))
 	var t := create_tween()
