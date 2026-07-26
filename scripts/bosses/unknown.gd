@@ -11,6 +11,12 @@ extends CharacterBody2D
 ## something that arrived without travelling *at* them first. Three phases,
 ## each adding an attack, same as every boss before it. Played straight,
 ## same as everything.
+##
+## The fight is a bullet hell. Two pressures run the whole time, on top of
+## whatever the state machine is doing: censor-bar WALLS sweep in from the
+## room's edges on a clock, each with one gap to thread, faster and paired as
+## the phases stack — and its own attacks favour slow dense SPIRALS over
+## aimed shots, the Touhou trade: nothing is fast, everything is everywhere.
 
 const PROJECTILE := preload("res://scenes/enemies/EnemyProjectile.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
@@ -30,7 +36,7 @@ const SUBTITLE := "Even the Place Looks Away"
 @export var base_health: float = 420.0
 var floor_index: int = 0
 
-enum State { INTRO, IDLE, BLINK, RING, RAZORS, BAR, DEAD }
+enum State { INTRO, IDLE, BLINK, RING, RAZORS, BAR, SPIRAL, DEAD }
 
 var state: State = State.INTRO
 var phase: int = 1
@@ -44,6 +50,13 @@ var _hurt_flash: float = 0.0
 var _step: int = 0
 var _blink_cd: float = 2.0
 var _blink_to: Vector2 = Vector2.ZERO
+## The ambient wall clock, ticking from the moment the intro ends.
+var _wall_cd: float = 4.0
+## Spiral bookkeeping: time left, tick accumulator, arm angle, spin sign.
+var _spiral_t: float = 0.0
+var _spiral_tick: float = 0.0
+var _spiral_angle: float = 0.0
+var _spiral_spin: float = 1.0
 
 @onready var anim: SheetAnimator = $SheetAnimator
 
@@ -100,6 +113,14 @@ func _physics_process(delta: float) -> void:
 	if _cooldown > 0.0: _cooldown -= delta
 	if _blink_cd > 0.0: _blink_cd -= delta
 
+	# The room attacks on its own schedule, whatever the boss is doing.
+	_wall_cd -= delta
+	if _wall_cd <= 0.0:
+		_wall_cd = [5.0, 3.6, 2.6][clampi(phase - 1, 0, 2)]
+		_spawn_wall()
+		if phase >= 3:
+			_spawn_wall()   # paired walls: two edges, two gaps, one player
+
 	_act(delta)
 	move_and_slide()
 	_clamp_to_room()
@@ -141,15 +162,19 @@ func _act(delta: float) -> void:
 			if _timer <= 0.0:
 				_do_bar(dir)
 
+		State.SPIRAL:
+			velocity = Vector2.ZERO
+			_run_spiral(delta)
+
 
 func _choose_attack() -> void:
-	var options := ["ring"]
+	var options := ["ring", "spiral"]
 	if phase >= 2:
 		options.append("razors")
-		options.append("razors")
+		options.append("spiral")
 	if phase >= 3:
 		options.append("bar")
-		options.append("bar")
+		options.append("spiral")
 	match options[randi() % options.size()]:
 		"ring":
 			state = State.RING; _timer = 0.6
@@ -159,6 +184,13 @@ func _choose_attack() -> void:
 			anim.play(&"attack", true)
 		"bar":
 			state = State.BAR; _timer = 0.7
+			anim.play(&"attack", true)
+		"spiral":
+			state = State.SPIRAL
+			_spiral_t = 2.4 + 0.5 * float(phase)
+			_spiral_tick = 0.0
+			_spiral_angle = randf() * TAU
+			_spiral_spin = 1.0 if randf() < 0.5 else -1.0
 			anim.play(&"attack", true)
 
 
@@ -237,6 +269,63 @@ func _do_bar(dir: Vector2) -> void:
 			p.setup(SHOT_STATIC, dir * 145.0, 1.0, false, 620.0, 0, false)
 	EventBus.screen_shake.emit(4.0, 0.25)
 	_end_attack(1.4)
+
+
+## Touhou rules: slow bullets, many arms, constant angular step. The pattern
+## hangs in the air and the player reads the whole room, not one shot. Phase 3
+## adds a counter-rotating second spiral, which is where the chaos lives —
+## the two lattices drift through each other and safe lanes keep moving.
+func _run_spiral(delta: float) -> void:
+	_spiral_t -= delta
+	_spiral_tick -= delta
+	if _spiral_tick <= 0.0:
+		_spiral_tick = 0.085
+		var arms := 3 + (1 if phase >= 2 else 0)
+		for i in arms:
+			var a := _spiral_angle + TAU * float(i) / float(arms)
+			_shoot(SHOT_STATIC, Vector2.from_angle(a), 88.0)
+			if phase >= 3:
+				_shoot(SHOT_FEATHER, Vector2.from_angle(-a + PI * 0.5), 74.0)
+		_spiral_angle += 0.42 * _spiral_spin
+	if _spiral_t <= 0.0:
+		_end_attack(1.3)
+
+
+## One censor bar, arriving from outside: a row of static spanning the room
+## save for a single gap. The gap is the whole conversation — find it, be in
+## it. Spawned just inside the walls so every shot is visible from birth.
+func _spawn_wall() -> void:
+	if state == State.INTRO or state == State.DEAD:
+		return
+	var r: Node = get_parent()
+	if r == null or not r.has_method("room_rect"):
+		return
+	var rect: Rect2 = r.room_rect()
+	AudioManager.play_sfx(sfx_blink, 0.0, -4.0)
+	var horizontal := randf() < 0.5          # wall spans left-right, sweeps up/down
+	var from_low := randf() < 0.5
+	var speed := 92.0 + 10.0 * float(phase)
+	var slots := 15
+	var gap_at := randi_range(1, slots - 4)  # gap never flush with a wall
+	var gap_w := 3
+	for i in slots:
+		if i >= gap_at and i < gap_at + gap_w:
+			continue
+		var frac := (float(i) + 0.5) / float(slots)
+		var p := PROJECTILE.instantiate()
+		get_parent().add_child(p)
+		var pos: Vector2
+		var vel: Vector2
+		if horizontal:
+			pos = Vector2(rect.position.x + rect.size.x * frac,
+				rect.position.y + (rect.size.y - 44.0 if from_low else 44.0))
+			vel = Vector2(0, -speed if from_low else speed)
+		else:
+			pos = Vector2(rect.position.x + (rect.size.x - 44.0 if from_low else 44.0),
+				rect.position.y + rect.size.y * frac)
+			vel = Vector2(-speed if from_low else speed, 0)
+		p.global_position = pos
+		p.setup(SHOT_STATIC, vel, 1.0, false, 700.0, 0, false)
 
 
 func _shoot(tex: Texture2D, dir: Vector2, speed: float) -> void:
