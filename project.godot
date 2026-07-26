@@ -30,6 +30,10 @@ GameFeel="*res://scripts/core/game_feel.gd"
 Effects="*res://scripts/core/effects.gd"
 RunManager="*res://scripts/core/run_manager.gd"
 
+[gui]
+
+theme/custom_font="res://assets/fonts/PressStart2P-Regular.ttf"
+
 [display]
 
 window/size/viewport_width=640

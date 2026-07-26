@@ -2,8 +2,9 @@
 
 ## Summary
 
-Almost everything here is original, generated for this project. There is
-exactly one third-party source, recorded below.
+Almost everything here is original, generated for this project. The
+third-party sources are recorded below — note the music is NOT cleared for
+distribution.
 
 ## Third-party assets
 
@@ -11,6 +12,8 @@ exactly one third-party source, recorded below.
 |---|---|---|---|---|
 | Weapon Pack - FREE (`anim-bullet.png`) | VladPenn | https://vladpenn.itch.io/weapon | *"Feel free to use it in any free/commercial game, if you want to credit me, that would be nice :)"* — free for commercial use, attribution optional (given here) | Silhouettes for the toy weapons, artifacts and projectiles in `assets/items/`, `assets/effects/`, `assets/environment/prop_books.png` |
 | 16x16 RPG Item Pack (72 sprites) | Alex's Assets | https://alexs-assets.itch.io/16x16-rpg-item-pack | **CC0 1.0 Universal** — public domain. Commercial use, modification and redistribution all permitted, attribution not required (credited here anyway, as the author asks) | Artifact and melee-weapon icons in `assets/items/`. Copied unmodified — see `tools/build_item_art.py` for the exact mapping |
+| Press Start 2P (font) | Cody "CodeMan38" Boisclair | https://fonts.google.com/specimen/Press+Start+2P | **SIL Open Font License 1.1** — free for any use, licence file kept at `assets/fonts/PressStart2P-OFL.txt` | The game's UI font, project-wide |
+| Terraria Calamity Mod OST (several tracks) | DM DOKURO (feat. SixteenInMono on some tracks) | YouTube rips of the Calamity Mod soundtrack | **Copyrighted — NOT cleared.** Fine as internal placeholders for a class project; must be licensed or replaced before any public release or distribution | Floor and boss music slots in `assets/audio/music/music_floor_*.wav`, `music_boss_*.wav`, plus the replaced game/victory/death tracks |
 
 Both packs are kept unmodified under `assets/third_party/` so every derivation
 is reproducible from source.

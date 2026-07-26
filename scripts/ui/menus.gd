@@ -110,7 +110,11 @@ func _dress_main_menu(full: bool = true) -> void:
 	vbox.add_theme_constant_override("separation", 2)
 	$Panel.offset_top = 112
 
-	_style_paper(_subtitle, 9, Color(0.42, 0.40, 0.44))
+	_style_paper(_subtitle, 8, Color(0.42, 0.40, 0.44))
+	# The pixel font is wide: unwrapped, a long tagline forces the whole
+	# panel wider than the paper note and drags the sliders with it.
+	_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_subtitle.custom_minimum_size = Vector2(236, 0)
 	for b in [_primary, _secondary]:
 		_style_paper(b, 13, Color(0.24, 0.23, 0.28))
 		b.custom_minimum_size = Vector2(180, 22)

@@ -59,8 +59,8 @@ func _ready() -> void:
 
 func _do_intro() -> void:
 	state = State.INTRO
-	EventBus.boss_spawned.emit(self, "The strongest")
-	EventBus.boss_intro_started.emit("JACK", "STRONGEST")
+	EventBus.boss_spawned.emit(self, "JACK")
+	EventBus.boss_intro_started.emit("JACK", "The Strongest Down Here")
 	AudioManager.play_sfx(sfx_roar, 0.0, 3.0)
 	EventBus.screen_shake.emit(9.0, 1.4)
 	anim.play(&"idle")
@@ -315,7 +315,7 @@ func _advance_phase(p: int) -> void:
 	EventBus.flash.emit(Color(1, 0.8, 0.35, 0.3), 0.25)
 	Effects.spawn_pop(get_parent(), global_position, 3.0)
 	Effects.spawn_stuffing(get_parent(), global_position, 30, 200.0, 4.0)
-	EventBus.toast.emit("THE END IS NEAR" if p == 2 else "FINSISH HIM",
+	EventBus.toast.emit("THE END IS NEAR" if p == 2 else "FINISH HIM",
 		Color(1, 0.75, 0.4))
 	_end_attack(0.5)
 
@@ -331,7 +331,7 @@ func _die() -> void:
 	Effects.spawn_pop(get_parent(), global_position, 4.2)
 	Effects.spawn_stuffing(get_parent(), global_position, 46, 240.0, 5.0)
 	EventBus.boss_defeated.emit(self)
-	EventBus.toast.emit("YOU ARE THE   ", Color(1, 0.85, 0.45))
+	EventBus.toast.emit("YOU ARE THE —", Color(1, 0.85, 0.45))
 	var t := create_tween()
 	t.tween_interval(1.1)
 	t.tween_property(self, "modulate:a", 0.0, 0.7)

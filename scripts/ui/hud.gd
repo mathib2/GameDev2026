@@ -198,8 +198,10 @@ func _build_extras() -> void:
 	_legend = HBoxContainer.new()
 	# tucked directly under the minimap (which spans x 536..632, y 30..118) so
 	# it reads as part of it rather than floating in the middle of the floor
-	_legend.position = Vector2(536, 120)
-	_legend.add_theme_constant_override("separation", 6)
+	# x accounts for the pixel font's width — at 536 the BOSS chip ran off
+	# the right edge of the screen
+	_legend.position = Vector2(514, 120)
+	_legend.add_theme_constant_override("separation", 4)
 	$Root.add_child(_legend)
 	for pair in [[FloorGenerator.RoomKind.SHOP, "SHOP"],
 			[FloorGenerator.RoomKind.TREASURE, "LOOT"],
