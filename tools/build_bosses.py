@@ -463,31 +463,56 @@ STATIC_PX = (240, 240, 244)
 
 
 def _wing(d, ax, ay, side, flap, tatter=0.0):
-    """One moth wing anchored at (ax, ay). `flap` raises and spreads it;
-    `tatter` eats it away for the death row."""
-    spread = 26 + int(flap * 12)
-    lift = int(flap * 14)
-    lobes = [
-        (ax + side * (10 + spread // 2), ay - 10 - lift, spread // 2 + 6, 14),
-        (ax + side * (8 + spread // 3), ay + 4 - lift // 2, spread // 3 + 7, 11),
-        (ax + side * 9, ay + 14, 9, 8),
+    """One moth wing anchored at (ax, ay), drawn as two pointed, scalloped
+    lobes rather than discs — the tip sweep is what makes it read as a wing.
+    `flap` raises and spreads it; `tatter` eats it away for the death row.
+    Every point stays within +/-40 of the anchor, so nothing clips the frame
+    even at full extension."""
+    s = side
+    f = flap
+    lift = int(f * 12)
+
+    # forewing: shoulder -> raked leading edge -> pointed tip, riding HIGH so
+    # the whole upper wing shows above the bar; scalloped trailing edge falls
+    # back toward the body behind it
+    tip = (ax + s * int(28 + 8 * f), ay - 20 - lift)
+    fore = [
+        (ax + s * 2, ay - 4),
+        (ax + s * int(12 + 4 * f), ay - 14 - lift),
+        tip,
+        (ax + s * int(34 + 2 * f), ay - 8 - lift // 2),
+        (ax + s * int(26 + 2 * f), ay - 2),   # scallop notch
+        (ax + s * int(18 + 2 * f), ay + 2),
+        (ax + s * 10, ay + 4),
+        (ax + s * 2, ay + 2),
     ]
-    for i, (cx, cy, rx, ry) in enumerate(lobes):
-        if tatter > 0.0 and i < int(tatter * 3):
-            continue
-        rx = max(3, int(rx * (1.0 - tatter * 0.5)))
-        ry = max(2, int(ry * (1.0 - tatter * 0.5)))
-        d.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=WING, outline=WING_DK)
-        d.ellipse([cx - rx + 2, cy - ry + 2, cx + rx - 3, cy + ry - 2], fill=WING_SH)
-        d.ellipse([cx - rx + 4, cy - ry + 3, cx + rx - 6, cy - 1], fill=WING)
-    # veins, from the anchor out through each lobe
-    for cx, cy, rx, ry in lobes[:2]:
-        d.line([ax + side * 6, ay, cx, cy], fill=VEIN, width=1)
-    # one dark eyespot on the big lobe — moths have them; this one watches
-    bx, by_, rx, ry = lobes[0]
-    if tatter < 0.4:
-        d.ellipse([bx - 3, by_ - 3, bx + 3, by_ + 3], fill=WING_DK)
-        d.ellipse([bx - 1, by_ - 1, bx + 1, by_ + 1], fill=VEIN)
+    # hindwing: smaller, swept down and out past the bar's flank
+    hind = [
+        (ax + s * 2, ay + 2),
+        (ax + s * int(18 + 2 * f), ay + 8),
+        (ax + s * int(24 + 3 * f), ay + 18 - int(f * 3)),  # lower tip
+        (ax + s * 10, ay + 20),
+        (ax + s * 3, ay + 12),
+    ]
+    if tatter < 0.66:
+        d.polygon(fore, fill=WING, outline=WING_DK)
+        # inner shading wedge, hugging the trailing edge
+        d.polygon([(ax + s * 4, ay - 6), (ax + s * int(22 + 3 * f), ay - 6 - lift // 2),
+                   (ax + s * int(14 + 2 * f), ay + 1), (ax + s * 4, ay)],
+                  fill=WING_SH)
+        # veins fan from the shoulder to the edge points
+        for px, py in (fore[1], tip, fore[3]):
+            d.line([ax + s * 3, ay - 3, px, py], fill=VEIN, width=1)
+        # the eyespot rides the forewing — moths have them; this one watches
+        if tatter < 0.33:
+            ex = ax + s * int(20 + 4 * f)
+            ey = ay - 12 - lift // 2
+            d.ellipse([ex - 4, ey - 3, ex + 4, ey + 3], fill=WING_DK)
+            d.ellipse([ex - 2, ey - 1, ex + 2, ey + 1], fill=VEIN)
+            d.point((ex + 1, ey - 1), fill=WING)
+    if tatter < 0.9:
+        d.polygon(hind, fill=WING_SH if tatter > 0.33 else WING, outline=WING_DK)
+        d.line([ax + s * 3, ay + 4, hind[2][0], hind[2][1]], fill=VEIN, width=1)
 
 
 def unknown(d, flap, jit_x, jit_y, bar_h, static_n, tatter=0.0, bar_gone=0.0):
@@ -500,11 +525,12 @@ def unknown(d, flap, jit_x, jit_y, bar_h, static_n, tatter=0.0, bar_gone=0.0):
             d.rectangle([cx + dx, cy + dy, cx + dx + w, cy + dy + 4], fill=BAR)
         return
 
-    _wing(d, cx - 8, cy - 4, -1, flap, tatter)
-    _wing(d, cx + 8, cy - 4, 1, flap, tatter)
+    _wing(d, cx - 10, cy - 10, -1, flap, tatter)
+    _wing(d, cx + 10, cy - 10, 1, flap, tatter)
 
-    # the bar. Pure black, wider than whatever is under it could possibly be.
-    bw = 30
+    # the bar. Pure black, wider than whatever is under it could possibly be —
+    # but not wider than the wings, which own the silhouette now.
+    bw = 26
     bh = 16 + int(bar_h * 6)
     bx = cx + jit_x
     by_ = cy + jit_y
@@ -571,23 +597,33 @@ def fx_dumbbell():
     return img
 
 
+GLOW_R = (255, 70, 58)
+GLOW_R_DIM = (200, 40, 40)
+
+
 def fx_static():
-    """A shard of censorship: black square, white noise."""
-    img = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+    """A shard of censorship: black core, white noise, and a red glow — the
+    one warm colour in the fifth floor's palette, so the bullet reads against
+    the colourless grid and everywhere else."""
+    img = Image.new("RGBA", (12, 12), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.rectangle([1, 1, 8, 8], fill=BAR, outline=(50, 50, 54))
-    for x, y in ((2, 3), (5, 2), (7, 5), (3, 6), (6, 7), (4, 4)):
-        d.point((x, y), fill=STATIC_PX if (x + y) % 2 else WING_SH)
+    d.ellipse([0, 0, 11, 11], fill=(*GLOW_R_DIM, 70))
+    d.ellipse([1, 1, 10, 10], fill=(*GLOW_R, 120))
+    d.rectangle([2, 2, 9, 9], fill=BAR, outline=(*GLOW_R, 255))
+    for x, y in ((3, 4), (6, 3), (8, 6), (4, 7), (7, 8), (5, 5)):
+        d.point((x, y), fill=STATIC_PX if (x + y) % 2 else GLOW_R)
     return img
 
 
 def fx_feather():
-    """A wing shard, thrown."""
-    img = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+    """A wing shard, thrown — white blade in a red halo."""
+    img = Image.new("RGBA", (12, 12), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    d.polygon([(1, 8), (3, 3), (7, 1), (8, 2), (5, 6), (2, 9)], fill=WING,
-              outline=WING_DK)
-    d.line([2, 8, 7, 2], fill=WING_SH)
+    d.ellipse([0, 0, 11, 11], fill=(*GLOW_R_DIM, 60))
+    d.ellipse([2, 2, 9, 9], fill=(*GLOW_R, 100))
+    d.polygon([(2, 9), (4, 4), (8, 2), (9, 3), (6, 7), (3, 10)], fill=WING,
+              outline=(*GLOW_R, 255))
+    d.line([3, 9, 8, 3], fill=WING_SH)
     return img
 
 
