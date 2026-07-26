@@ -15,6 +15,11 @@ item means adding a `.tres` file — not editing a script. `ContentDB` scans
 3. Set `id` (must be unique), `display_name`, `spritesheet`, and pick a
    `behaviour`.
 4. Tune health, speed, cooldowns, drops, and sounds.
+5. Gate it by depth: `min_floor` is the first floor it appears on, and
+   `max_floor` (default -1 = no cap) the last. `min_floor == max_floor` makes
+   it **native to exactly one floor** — that is how the Gym keeps its
+   Kettlebell and ???? keeps its [REDACTED]. `godot --headless --genaudit`
+   prints every floor's roster so you can see where a new toy landed.
 
 That's it — it now appears in the spawn pool automatically.
 

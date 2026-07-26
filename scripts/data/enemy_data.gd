@@ -40,6 +40,10 @@ enum Behaviour {
 @export var score: int = 1
 ## First floor index this enemy may appear on (0 = the Playground).
 @export var min_floor: int = 0
+## Last floor index (inclusive), or -1 for no cap. min_floor == max_floor
+## makes a toy native to exactly one floor — how each floor keeps a roster
+## the others never see.
+@export var max_floor: int = -1
 
 @export_group("Behaviour")
 @export var behaviour: Behaviour = Behaviour.CHASER

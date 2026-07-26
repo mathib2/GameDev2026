@@ -21,7 +21,10 @@ const SHOT_FEATHER := preload("res://assets/effects/fx_feather.png")
 const TITLE := "?????"
 const SUBTITLE := "Even the Place Looks Away"
 
-@export var base_health: float = 340.0
+## Highest base in the roster on the deepest floor: with the shared
+## (1 + 0.35 * floor_index) multiplier this lands at more than twice Jack's
+## effective health. The last fight is meant to be the wall.
+@export var base_health: float = 380.0
 var floor_index: int = 0
 
 enum State { INTRO, IDLE, BLINK, RING, RAZORS, BAR, DEAD }
@@ -189,7 +192,7 @@ func _finish_blink() -> void:
 
 func _do_ring() -> void:
 	AudioManager.play_sfx(sfx_burst, 0.05, -2.0)
-	var count := 10 + phase * 3
+	var count := 12 + phase * 3
 	var base := randf() * TAU
 	for i in count:
 		_shoot(SHOT_STATIC, Vector2.from_angle(base + TAU * float(i) / float(count)), 105.0)

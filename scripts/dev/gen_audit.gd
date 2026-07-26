@@ -124,6 +124,8 @@ func _audit_layouts(rng: RandomNumberGenerator) -> void:
 		var note := "" if early > 0 else "   <- none on floor 0"
 		print("  %-9s %2d on floor 0, %2d on floor %d%s" % [kind, early, late, deepest, note])
 
+	_audit_enemy_pools()
+
 	var trials := 600
 	var crates := 0
 	var lane_blocked := 0
@@ -142,3 +144,26 @@ func _audit_layouts(rng: RandomNumberGenerator) -> void:
 		+ "%d had nowhere to spawn" % no_anchors)
 	if lane_blocked > 0 or no_anchors > 0:
 		printerr("[AUDIT] FAIL: the room generator produced an unplayable room")
+
+
+## Which toys each floor can actually field. Floor-native enemies are gated by
+## min_floor == max_floor in data — the thing most worth counting is that a
+## native never leaks onto another floor, and that every floor HAS natives.
+func _audit_enemy_pools() -> void:
+	print("\n[AUDIT] enemy pool by floor (* = native to that floor only)")
+	for fi in RunManager.total_floors():
+		var pool: Array = ContentDB.enemies_for_floor(fi)
+		var names := PackedStringArray()
+		var natives := 0
+		for e in pool:
+			if e.max_floor >= 0 and e.min_floor == e.max_floor:
+				names.append("*" + String(e.id))
+				natives += 1
+			else:
+				names.append(String(e.id))
+		names.sort()
+		print("  floor %d: %2d toys, %d native  [%s]" % [fi, pool.size(), natives,
+			", ".join(names)])
+		for e in pool:
+			if e.max_floor >= 0 and (fi < e.min_floor or fi > e.max_floor):
+				printerr("[AUDIT] FAIL: %s leaked onto floor %d" % [e.id, fi])

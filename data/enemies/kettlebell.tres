@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/enemies/enemy_kettlebell.png" id="2_sheet"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/enemy_death.wav" id="3_death"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/block_thud.wav" id="4_attack"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"kettlebell"
+display_name = "Kettlebell"
+spritesheet = ExtResource("2_sheet")
+frame_size = Vector2i(32, 32)
+sprite_offset = Vector2(0, -16)
+behaviour = 8
+max_health = 14.0
+move_speed = 48.0
+contact_damage = 2
+knockback_resist = 0.6
+attack_cooldown = 2.1
+attack_range = 260.0
+telegraph_time = 0.55
+coin_chance = 0.4
+heart_chance = 0.1
+min_floor = 1
+max_floor = 1
+sfx_death = ExtResource("3_death")
+sfx_attack = ExtResource("4_attack")

@@ -425,8 +425,9 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 		# Depth scaling. Without this an Arena toy had exactly the same
 		# health as a Playground one and only the *count* rose, so later floors got
 		# longer rather than harder — and the player's items and skills had
-		# outgrown them by floor two.
-		var depth := 1.0 + 0.18 * float(floor_index)
+		# outgrown them by floor two. Steeper now that the run is five floors:
+		# the curve has to land on ???? being genuinely dangerous.
+		var depth := 1.0 + 0.24 * float(floor_index)
 		e.health = data.max_health * depth
 		if difficulty > 1.2:
 			e.scale = Vector2(1.25, 1.25)

@@ -63,8 +63,8 @@ cover stands *and* where the fight starts, designed together — from a library 
 ones when the library runs dry. It is seeded per room, so walking back in finds
 the room you left.
 
-**Ten enemies**, each with idle/walk/attack/hurt/death animations and its own
-movement archetype:
+**Eighteen enemies**, each with idle/walk/attack/hurt/death animations and its
+own movement archetype. Ten Playground toys roam every floor:
 
 | | | |
 |---|---|---|
@@ -72,6 +72,16 @@ movement archetype:
 | Toy Soldier — holds range and shoots | Baby Rattle — radial shockwaves | Stuffed Bunny — leaps |
 | Wind-Up Teeth — bounces off walls | Porcelain Doll — slow, relentless, tanky | Toy Car — telegraphs, then charges |
 | Building Block — stationary, fires spreads | | |
+
+— and every floor below keeps two natives the others never see, tougher with
+each floor down:
+
+| Floor | Natives |
+|---|---|
+| The Gym | Kettlebell — telegraphs, then slides like a thrown weight · Jump Rope — skips at you in arcs |
+| The Steam Room | Steam Valve — stationary, scalding radial bursts · Bar of Soap — skids in bursts, pauses |
+| The Underground Arena | Punching Bag — slow, relentless, barely shoveable · Ring Bell — holds range, rings out shots |
+| ???? | Static Mite — ricochets like a glitch · [REDACTED] — stationary, fires spreads of static |
 
 **Boss: THE TEDDY BEAR KING.** Three phases, each *adding* an attack rather
 than replacing one — slam, barrage, summon, charge — so it visibly escalates.

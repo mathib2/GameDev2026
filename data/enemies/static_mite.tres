@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/enemies/enemy_static_mite.png" id="2_sheet"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/enemy_death.wav" id="3_death"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"static_mite"
+display_name = "Static Mite"
+spritesheet = ExtResource("2_sheet")
+frame_size = Vector2i(32, 32)
+sprite_offset = Vector2(0, -16)
+behaviour = 6
+max_health = 13.0
+move_speed = 70.0
+contact_damage = 1
+coin_chance = 0.45
+heart_chance = 0.08
+min_floor = 4
+max_floor = 4
+sfx_death = ExtResource("3_death")

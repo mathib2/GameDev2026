@@ -162,9 +162,10 @@ func random_layout(kind_name: String, floor_index: int, rng: RandomNumberGenerat
 
 
 func enemies_for_floor(index: int) -> Array:
-	# Each enemy declares its own min_floor in data; core keeps no content lists.
+	# Each enemy declares its own min_floor/max_floor in data; core keeps no
+	# content lists. A toy with min == max is native to exactly that floor.
 	var pool: Array = []
 	for e in enemies.values():
-		if e.min_floor <= index:
+		if e.min_floor <= index and (e.max_floor < 0 or index <= e.max_floor):
 			pool.append(e)
 	return pool if not pool.is_empty() else enemies.values()

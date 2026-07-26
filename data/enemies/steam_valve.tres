@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/enemies/enemy_steam_valve.png" id="2_sheet"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/enemy_death.wav" id="3_death"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/rattle_shake.wav" id="4_attack"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"steam_valve"
+display_name = "Steam Valve"
+spritesheet = ExtResource("2_sheet")
+frame_size = Vector2i(32, 32)
+sprite_offset = Vector2(0, -16)
+behaviour = 4
+max_health = 18.0
+move_speed = 0.0
+contact_damage = 1
+knockback_resist = 1.0
+attack_cooldown = 2.2
+projectile_count = 10
+projectile_speed = 95.0
+coin_chance = 0.45
+heart_chance = 0.1
+min_floor = 2
+max_floor = 2
+sfx_death = ExtResource("3_death")
+sfx_attack = ExtResource("4_attack")
