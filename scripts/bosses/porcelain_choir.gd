@@ -13,6 +13,8 @@ extends CharacterBody2D
 ## a nursery — is never acknowledged by the game, which is the only way it lands.
 
 const PROJECTILE := preload("res://scenes/enemies/EnemyProjectile.tscn")
+## She sings scalding vapour.
+const SHOT_TEX := preload("res://assets/effects/fx_steam.png")
 const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 
 @export var base_health: float = 240.0
@@ -53,7 +55,7 @@ func _ready() -> void:
 func _do_intro() -> void:
 	state = State.INTRO
 	EventBus.boss_spawned.emit(self, "THE PORCELAIN CHOIR")
-	EventBus.boss_intro_started.emit("THE PORCELAIN CHOIR", "She Has Been Practising")
+	EventBus.boss_intro_started.emit("THE PORCELAIN CHOIR", "She Practises in the Steam")
 	AudioManager.play_sfx(sfx_roar, 0.0, 2.0)
 	EventBus.screen_shake.emit(8.0, 1.3)
 	anim.play(&"idle")
@@ -234,7 +236,7 @@ func _shoot(dir: Vector2, speed: float) -> void:
 	var p := PROJECTILE.instantiate()
 	get_parent().add_child(p)
 	p.global_position = global_position + dir * 24.0
-	p.setup(null, dir * speed, 1.0, false, 520.0, 0, false)
+	p.setup(SHOT_TEX, dir * speed, 1.0, false, 520.0, 0, false)
 
 
 func _end_attack(cool: float) -> void:

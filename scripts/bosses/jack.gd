@@ -12,6 +12,8 @@ extends CharacterBody2D
 ## Three phases, each adding an attack. Played dead straight, as always.
 
 const PROJECTILE := preload("res://scenes/enemies/EnemyProjectile.tscn")
+## The champion throws hands. Literally.
+const SHOT_TEX := preload("res://assets/effects/fx_glove.png")
 const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 
 @export var base_health: float = 280.0
@@ -57,7 +59,7 @@ func _ready() -> void:
 func _do_intro() -> void:
 	state = State.INTRO
 	EventBus.boss_spawned.emit(self, "JACK")
-	EventBus.boss_intro_started.emit("JACK", "Some Assembly Required")
+	EventBus.boss_intro_started.emit("JACK", "Undefeated. Underground.")
 	AudioManager.play_sfx(sfx_roar, 0.0, 3.0)
 	EventBus.screen_shake.emit(9.0, 1.4)
 	anim.play(&"idle")
@@ -222,7 +224,7 @@ func _shoot(dir: Vector2, speed: float) -> void:
 	var p := PROJECTILE.instantiate()
 	get_parent().add_child(p)
 	p.global_position = global_position + dir * 24.0
-	p.setup(null, dir * speed, 1.0, false, 520.0, 0, false)
+	p.setup(SHOT_TEX, dir * speed, 1.0, false, 520.0, 0, false)
 
 
 func _end_attack(cool: float) -> void:

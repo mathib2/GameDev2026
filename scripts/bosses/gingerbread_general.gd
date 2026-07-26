@@ -9,9 +9,11 @@ extends CharacterBody2D
 
 const PROJECTILE := preload("res://scenes/enemies/EnemyProjectile.tscn")
 const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
+## He hands out training weights, at speed.
+const SHOT_TEX := preload("res://assets/effects/fx_dumbbell.png")
 
 const TITLE := "THE GINGERBREAD GENERAL"
-const SUBTITLE := "Commander of the Crumb Legion"
+const SUBTITLE := "Drill Sergeant of the Gym"
 
 @export var base_health: float = 190.0
 var floor_index: int = 0
@@ -215,7 +217,7 @@ func _shoot(dir: Vector2, speed: float) -> void:
 	var p := PROJECTILE.instantiate()
 	get_parent().add_child(p)
 	p.global_position = global_position + dir * 24.0
-	p.setup(null, dir * speed, 1.0, false, 520.0, 0, false)
+	p.setup(SHOT_TEX, dir * speed, 1.0, false, 520.0, 0, false)
 
 
 func _end_attack(cool: float) -> void:
