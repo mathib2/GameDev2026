@@ -54,8 +54,8 @@ func _ready() -> void:
 
 func _do_intro() -> void:
 	state = State.INTRO
-	EventBus.boss_spawned.emit(self, "THE PORCELAIN CHOIR")
-	EventBus.boss_intro_started.emit("THE PORCELAIN CHOIR", "She Practises in the Steam")
+	EventBus.boss_spawned.emit(self, "THE PORCELAIN DOLL")
+	EventBus.boss_intro_started.emit("THE PORCELAIN DOLL", "WHERES YOUR MOMMY")
 	AudioManager.play_sfx(sfx_roar, 0.0, 2.0)
 	EventBus.screen_shake.emit(8.0, 1.3)
 	anim.play(&"idle")
@@ -296,7 +296,7 @@ func _advance_phase(p: int) -> void:
 	Effects.spawn_pop(get_parent(), global_position, 3.0)
 	Effects.spawn_burst(get_parent(), global_position, Color(0.93, 0.92, 0.95),
 		30, 200.0, 3.4)
-	EventBus.toast.emit("A NOTE CRACKS" if p == 2 else "THE CHOIR JOINS IN",
+	EventBus.toast.emit("SHES CRACKING" if p == 2 else "END IT",
 		Color(0.8, 0.86, 1.0))
 	_end_attack(0.5)
 
@@ -313,7 +313,7 @@ func _die() -> void:
 	Effects.spawn_burst(get_parent(), global_position, Color(0.95, 0.94, 0.97),
 		48, 250.0, 4.0)
 	EventBus.boss_defeated.emit(self)
-	EventBus.toast.emit("THE PORCELAIN CHOIR IS QUIET", Color(0.85, 0.9, 1.0))
+	EventBus.toast.emit("DOLLS ARE FOR BABYS", Color(0.85, 0.9, 1.0))
 	var t := create_tween()
 	t.tween_interval(1.1)
 	t.tween_property(self, "modulate:a", 0.0, 0.7)

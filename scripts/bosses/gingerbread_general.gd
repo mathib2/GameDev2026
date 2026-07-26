@@ -12,8 +12,8 @@ const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 ## He hands out training weights, at speed.
 const SHOT_TEX := preload("res://assets/effects/fx_dumbbell.png")
 
-const TITLE := "THE GINGERBREAD GENERAL"
-const SUBTITLE := "Drill Sergeant of the Gym"
+const TITLE := "TUFF COOKIE"
+const SUBTITLE := "STRONGEST COOKIE"
 
 @export var base_health: float = 190.0
 var floor_index: int = 0
@@ -209,7 +209,7 @@ func _do_conscript() -> void:
 		e.scale = Vector2(0.75, 0.75)
 		Effects.spawn_burst(get_parent(), e.global_position,
 			Color(0.85, 0.6, 0.35), 8, 90.0, 2.5)
-	EventBus.toast.emit("FRESH FROM THE OVEN", Color(1, 0.6, 0.6))
+	EventBus.toast.emit("VERY HARD", Color(1, 0.6, 0.6))
 	_end_attack(1.3)
 
 
@@ -273,7 +273,7 @@ func _advance_phase(p: int) -> void:
 	EventBus.screen_shake.emit(10.0, 0.7)
 	EventBus.flash.emit(Color(1, 0.8, 0.5, 0.30), 0.25)
 	Effects.spawn_burst(get_parent(), global_position, Color(0.85, 0.62, 0.36), 30, 200.0, 4.0)
-	EventBus.toast.emit("HE SMELLS OF CINNAMON AND WAR" if p == 2 else "HE CRUMBLES, BUT WILL NOT YIELD",
+	EventBus.toast.emit("HE IS NOT TUFF ENOUGH" if p == 2 else "HE CRACKS",
 		Color(1, 0.55, 0.5))
 	_end_attack(0.5)
 
@@ -288,7 +288,7 @@ func _die() -> void:
 	EventBus.screen_shake.emit(13.0, 1.2)
 	Effects.spawn_burst(get_parent(), global_position, Color(0.85, 0.62, 0.36), 46, 240.0, 5.0)
 	EventBus.boss_defeated.emit(self)
-	EventBus.toast.emit("THE GENERAL IS CRUMBS", Color(1, 0.9, 0.5))
+	EventBus.toast.emit("CRUMBS", Color(1, 0.9, 0.5))
 	var t := create_tween()
 	t.tween_interval(1.1)
 	t.tween_property(self, "modulate:a", 0.0, 0.7)

@@ -1,8 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://d2r1uwlxba7tj"]
 
-[ext_resource type="Script" path="res://scripts/bosses/porcelain_choir.gd" id="1_boss"]
-[ext_resource type="Script" path="res://scripts/core/sheet_animator.gd" id="2_anim"]
-[ext_resource type="Texture2D" path="res://assets/bosses/boss_porcelain_choir.png" id="3_sheet"]
+[ext_resource type="Script" uid="uid://bpd0op7lytytw" path="res://scripts/bosses/porcelain_choir.gd" id="1_boss"]
+[ext_resource type="Script" uid="uid://upqym0k2v7k7" path="res://scripts/core/sheet_animator.gd" id="2_anim"]
+[ext_resource type="Texture2D" uid="uid://cnxp6ayditrxr" path="res://assets/bosses/boss_porcelain_choir.png" id="3_sheet"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 24.0
@@ -10,33 +10,57 @@ radius = 24.0
 [sub_resource type="CircleShape2D" id="CircleShape2D_hurt"]
 radius = 28.0
 
-[node name="PorcelainChoir" type="CharacterBody2D"]
+[node name="PorcelainChoir" type="CharacterBody2D" unique_id=1810352014]
 collision_layer = 4
-collision_mask = 1
 script = ExtResource("1_boss")
 
-[node name="SheetAnimator" type="Sprite2D" parent="."]
+[node name="SheetAnimator" type="Sprite2D" parent="." unique_id=628401762]
 position = Vector2(0, -30)
 texture = ExtResource("3_sheet")
 hframes = 5
 vframes = 5
 script = ExtResource("2_anim")
 animations = {
-"attack": {"row": 2, "frames": 4, "fps": 11.0, "loop": false},
-"death": {"row": 4, "frames": 5, "fps": 7.0, "loop": false},
-"hurt": {"row": 3, "frames": 2, "fps": 12.0, "loop": false},
-"idle": {"row": 0, "frames": 4, "fps": 4.0, "loop": true},
-"walk": {"row": 1, "frames": 4, "fps": 7.0, "loop": true}
+"attack": {
+"fps": 11.0,
+"frames": 4,
+"loop": false,
+"row": 2
+},
+"death": {
+"fps": 7.0,
+"frames": 5,
+"loop": false,
+"row": 4
+},
+"hurt": {
+"fps": 12.0,
+"frames": 2,
+"loop": false,
+"row": 3
+},
+"idle": {
+"fps": 4.0,
+"frames": 4,
+"loop": true,
+"row": 0
+},
+"walk": {
+"fps": 7.0,
+"frames": 4,
+"loop": true,
+"row": 1
+}
 }
 columns = 5
 rows = 5
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=818779930]
 shape = SubResource("CircleShape2D_body")
 
-[node name="HurtBox" type="Area2D" parent="."]
+[node name="HurtBox" type="Area2D" parent="." unique_id=1478784255]
 collision_layer = 0
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtBox"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtBox" unique_id=1924173586]
 shape = SubResource("CircleShape2D_hurt")
