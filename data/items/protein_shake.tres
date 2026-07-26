@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://o4x4us4mwyru"]
 
 [ext_resource type="Script" uid="uid://dmlmv4wgt287w" path="res://scripts/data/item_data.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://cl7vpoankbujn" path="res://assets/items/item_protein_shake.png" id="2_icon"]
+[ext_resource type="Texture2D" uid="uid://cl7vpoankbujn" path="res://assets/items/item_protein_shake_old.png" id="2_icon"]
 [ext_resource type="AudioStream" uid="uid://bwqsql5vtgx4u" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
 
 [resource]

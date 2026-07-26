@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://l1msa6pf1wvk"
-path="res://.godot/imported/item_golden_dumbbell.png-982c17b884728749353e342ba8b69a9d.ctex"
+uid="uid://cmxsx2ulyptk5"
+path="res://.godot/imported/item_golden_dumbell.png-1306de7e39de8e58f5d775cf617b6208.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/item_golden_dumbbell.png"
-dest_files=["res://.godot/imported/item_golden_dumbbell.png-982c17b884728749353e342ba8b69a9d.ctex"]
+source_file="res://assets/items/item_golden_dumbell.png"
+dest_files=["res://.godot/imported/item_golden_dumbell.png-1306de7e39de8e58f5d775cf617b6208.ctex"]
 
 [params]
 
