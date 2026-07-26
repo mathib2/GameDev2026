@@ -11,9 +11,9 @@ The game plays it completely straight. The Teddy Bear King gets a screen shake,
 a title card and a dramatic sting — and then he squeaks. That contrast is the
 whole point, so nothing in the game ever acknowledges the joke.
 
-> Godot 4.x port and expansion of the HTML prototype on `master`
-> (`stuffed/index.html`), which remains there as reference. Formerly titled
-> STUFFED; the toys stayed when the title changed.
+> Godot 4.x port and expansion of an earlier HTML prototype (retired from the
+> tree; see git history). Formerly titled STUFFED; the toys stayed when the
+> title changed.
 
 ---
 

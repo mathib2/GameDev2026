@@ -19,7 +19,6 @@ signal player_damaged(amount: int, hp: int, max_hp: int)
 signal player_healed(hp: int, max_hp: int)
 signal player_died()
 signal enemy_died(enemy: Node)
-signal damage_dealt(target: Node, amount: float, crit: bool)
 
 # ── boss ──────────────────────────────────────────────────────────────────
 signal boss_spawned(boss: Node, display_name: String)
