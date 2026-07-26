@@ -2,6 +2,12 @@ extends CanvasLayer
 
 ## The story, told in cards between the fighting.
 ##
+## Patrick is sixteen and has never lost at anything. Somewhere below the town
+## is a cursed place that replicates real rooms almost correctly — a playground,
+## a gym, a steam room, an arena — and whoever walks out of the bottom of it is
+## the strongest. So he walked in. The toys are what the place uses for
+## opponents; it does not understand what people fight, only that they do.
+##
 ## Tone rule, inherited from the boss intros and kept religiously: **the game
 ## never acknowledges the joke.** It is a game about a teddy bear that squeaks
 ## when it hits you, and it delivers every line of its own story completely
@@ -10,7 +16,7 @@ extends CanvasLayer
 ##
 ## So: no exclamation marks, no jokes, no narrator. Short declarative
 ## sentences, past tense for what happened, present tense for what is still
-## happening. The horror is entirely in what is left unsaid.
+## happening. The wrongness is entirely in what is left unsaid.
 ##
 ## Cards never pause the game and never take input. They fade in over the top
 ## of play and fade out on a timer, so the story can be read or completely
@@ -22,29 +28,29 @@ const FADE_OUT := 0.9
 
 ## Shown once, when a run starts.
 const OPENING: Array[String] = [
-	"THE CHILD OUTGREW THEM.",
-	"That was eleven years ago.",
-	"They have had time to think about it.",
+	"PATRICK IS SIXTEEN.",
+	"He has never lost at anything.",
+	"The place downstairs looks almost like a playground.",
 ]
 
-## One per floor, keyed by index. Past the end, the sub-basements get nothing —
+## One per floor, keyed by index. Past the end, the deep floors get nothing —
 ## silence is better than filler.
 const FLOORS: Array = [
-	["THE NURSERY", "Where they were loved first."],
-	["THE PLAYROOM", "Where they learned what hands are for."],
-	["THE ATTIC", "Where they were put, and left."],
-	["THE TOY FACTORY", "Where they are still being made."],
+	["THE PLAYGROUND", "Where you first compete."],
+	["THE GYM", "Build your muscles."],
+	["THE STEAM ROOM", "It's getting hot in here."],
+	["THE UNDERGROUND ARENA", "The final test."],
 ]
 
 const VICTORY: Array[String] = [
-	"THE LINE STOPS.",
-	"The machines cool. The boxes stay shut.",
-	"Upstairs, a child asks for a new one.",
+	"THE PLACE RUNS OUT OF FLOORS.",
+	"Nothing else steps forward. The lights stay on.",
+	"Patrick walks home as the strongest.",
 ]
 
 const DEFEAT: Array[String] = [
-	"THEY PUT YOU WITH THE OTHERS.",
-	"You are not the first.",
+	"THE TITLE STAYS HERE.",
+	"It will still be here when you come back.",
 ]
 
 var _root: Control

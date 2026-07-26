@@ -36,7 +36,7 @@ theme_override_constants/separation = 10
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 horizontal_alignment = 1
-text = "STUFFED"
+text = "ENTER THE STRONGEST"
 
 [node name="Subtitle" type="Label" parent="Panel/VBox"]
 layout_mode = 2

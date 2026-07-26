@@ -26,7 +26,7 @@ func _ready() -> void:
 		Mode.MAIN:
 			_dress_main_menu()
 			_title.text = ""          # the logo image carries the name now
-			_subtitle.text = "they were always going to come apart"
+			_subtitle.text = "he is the strongest. nobody has ever checked."
 			if SaveManager.runs > 0:
 				_subtitle.text += "\nbest: floor %d · %d toys torn open lifetime" % [
 					SaveManager.best_floor, SaveManager.lifetime_kills]
@@ -199,11 +199,11 @@ func _add_volume_controls() -> void:
 
 func setup(victory: bool) -> void:
 	if victory:
-		_title.text = "THE TOY BOX IS EMPTY"
-		_subtitle.text = "nothing is moving. you sit down.\n%d toys torn open · %d coins · %ds" % [
+		_title.text = "THE STRONGEST"
+		_subtitle.text = "nothing else steps forward. you walk home.\n%d toys torn open · %d coins · %ds" % [
 			GameState.kills, GameState.coins, int(GameState.run_time)]
 	else:
-		_title.text = "STUFFED"
+		_title.text = "NOT STRONG ENOUGH"
 		_subtitle.text = "they got you in %s\n%d toys torn open · %d coins · %ds" % [
 			RunManager.floor_name().to_lower(), GameState.kills, GameState.coins,
 			int(GameState.run_time)]

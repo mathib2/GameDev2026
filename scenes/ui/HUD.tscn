@@ -41,7 +41,7 @@ theme_override_constants/separation = 3
 
 [node name="FloorName" type="Label" parent="Root/Top"]
 layout_mode = 2
-text = "THE NURSERY"
+text = "THE PLAYGROUND"
 
 [node name="Minimap" type="Control" parent="Root"]
 layout_mode = 1
@@ -170,7 +170,7 @@ offset_bottom = 26.0
 grow_horizontal = 2
 grow_vertical = 2
 horizontal_alignment = 1
-text = "Sovereign of the Nursery"
+text = "Sovereign of the Playground"
 
 [node name="Flash" type="ColorRect" parent="Root"]
 layout_mode = 1

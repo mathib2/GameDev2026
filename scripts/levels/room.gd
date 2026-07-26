@@ -18,9 +18,9 @@ const CHEST := preload("res://scripts/items/chest.gd")
 const SHRINE := preload("res://scripts/items/skill_shrine.gd")
 const BOOKS_TEX := preload("res://assets/environment/prop_books.png")
 # One boss per floor, indexed by floor. With four bosses and four floors a run
-# no longer repeats one, and each is matched to where it lives: the King rules
-# the Nursery, the General is baked in the Playroom, the Choir was packed away
-# in the Attic, and Jack never left the factory. New bosses just join the list.
+# no longer repeats one, and each is matched to where it lives: the King holds
+# the Playground, the General drills in the Gym, the Choir sings through the
+# Steam Room, and Jack runs the Underground Arena. New bosses just join the list.
 const BOSS_SCENES: Array[PackedScene] = [
 	preload("res://scenes/bosses/TeddyBearKing.tscn"),
 	preload("res://scenes/bosses/GingerbreadGeneral.tscn"),
@@ -30,7 +30,16 @@ const BOSS_SCENES: Array[PackedScene] = [
 ## Floors 5-14 use this with a BossData attached. See _spawn_boss.
 const GENERIC_BOSS := preload("res://scenes/bosses/GenericBoss.tscn")
 
-const FLOOR_TEX := preload("res://assets/environment/tiles_floor.png")
+## One surface per floor: mats for the Playground, boards for the Gym, ceramic
+## for the Steam Room, concrete for the Arena. Same 5-frame format as the old
+## shared sheet, so _paint_floor() only changes which PNG it scatters. Floors
+## deeper than the list clamp to the last — everything below the Arena is arena.
+const FLOOR_TEXTURES: Array[Texture2D] = [
+	preload("res://assets/environment/tiles_floor_playground.png"),
+	preload("res://assets/environment/tiles_floor_gym.png"),
+	preload("res://assets/environment/tiles_floor_steam.png"),
+	preload("res://assets/environment/tiles_floor_arena.png"),
+]
 const WALL_TEX := preload("res://assets/environment/tiles_wall.png")
 const CRATE_TEX := preload("res://assets/environment/prop_crate.png")
 
@@ -45,13 +54,15 @@ var _layout_rng := RandomNumberGenerator.new()
 var _layout: RoomLayout = null
 var _tint: Color = Color.WHITE
 
-## Per-floor ambience tints so the Nursery, Playroom, Attic and Toy
-## Factory stop looking identical.
+## Per-floor ambience tints, layered over each floor's own tilesheet. The
+## floors carry their identity in the texture now; the tint's real job is the
+## shared walls and props — sun-flat on the Playground, warm under gym lights,
+## humid in the Steam Room, red where the Arena waits.
 const FLOOR_TINTS: Array[Color] = [
 	Color(1.0, 1.0, 1.0),
-	Color(0.93, 0.96, 1.08),
-	Color(1.08, 0.97, 0.88),
-	Color(0.88, 0.96, 1.0),
+	Color(1.06, 0.98, 0.9),
+	Color(0.9, 1.0, 1.06),
+	Color(1.04, 0.92, 0.9),
 ]
 
 ## How often a combat room ignores the authored library and takes a generated
@@ -109,10 +120,11 @@ func _paint_floor() -> void:
 	holder.z_index = -20
 	holder.modulate = _tint
 	add_child(holder)
+	var tex := FLOOR_TEXTURES[clampi(GameState.floor_index, 0, FLOOR_TEXTURES.size() - 1)]
 	for y in ROWS:
 		for x in COLS:
 			var s := Sprite2D.new()
-			s.texture = FLOOR_TEX
+			s.texture = tex
 			s.hframes = 5
 			s.frame = _rng.randi_range(0, 4)
 			s.centered = false
@@ -349,8 +361,8 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 		e.data = data
 		add_child(e)
 		e.global_position = pos
-		# Depth scaling. Without this a Toy Factory toy had exactly the same
-		# health as a Nursery one and only the *count* rose, so later floors got
+		# Depth scaling. Without this an Arena toy had exactly the same
+		# health as a Playground one and only the *count* rose, so later floors got
 		# longer rather than harder — and the player's items and skills had
 		# outgrown them by floor two.
 		var depth := 1.0 + 0.18 * float(floor_index)

@@ -1,14 +1,19 @@
-# STUFFED
+# ENTER THE STRONGEST
 
-A top-down action roguelike. You are an enormous, extremely hairy man in a
-white tank top, and everything trying to kill you is a toy.
+A top-down action roguelike. Patrick is sixteen and has never lost at
+anything. Below the town is a cursed place that replicates real rooms almost
+correctly — a playground, a gym, a steam room, an arena — and whoever walks
+out of the bottom of it is the strongest. So he walked in. The place fills
+itself with toys for him to fight; it does not understand what people fight,
+only that they do.
 
 The game plays it completely straight. The Teddy Bear King gets a screen shake,
 a title card and a dramatic sting — and then he squeaks. That contrast is the
 whole point, so nothing in the game ever acknowledges the joke.
 
 > Godot 4.x port and expansion of the HTML prototype on `master`
-> (`stuffed/index.html`), which remains there as reference.
+> (`stuffed/index.html`), which remains there as reference. Formerly titled
+> STUFFED; the toys stayed when the title changed.
 
 ---
 
@@ -42,9 +47,12 @@ go. The dodge roll is the skill expression.
 
 `Start → explore rooms → fight → collect → get stronger → boss → descend`
 
-Four floors: **The Nursery → The Playroom → The Attic → The Toy Factory**.
-Each floor is procedurally generated — a random walk that promotes dead ends to
-special rooms, so the boss is always the furthest point from the start.
+Four floors: **The Playground → The Gym → The Steam Room → The Underground
+Arena** — then the place keeps going, and stops pretending it was ever about
+training. Each floor has its own surface (rubber mats, court boards, wet
+ceramic, cracked concrete) and is procedurally generated — a random walk that
+promotes dead ends to special rooms, so the boss is always the furthest point
+from the start.
 
 **Room types:** combat · treasure · shop · elite · secret · boss
 
@@ -114,7 +122,7 @@ Templates*).
 
 ```bash
 godot --headless --export-release "Windows Desktop"
-# → ../STUFFED-Windows/STUFFED.exe
+# → ../EnterTheStrongest-Windows/EnterTheStrongest.exe
 ```
 
 `export_presets.cfg` is committed on purpose — it defines the build and holds

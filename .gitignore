@@ -41,6 +41,7 @@ mono_crash.*.json
 
 # Build artefacts (the exported .exe is ~109 MB — never commit it)
 STUFFED-Windows/
+EnterTheStrongest-Windows/
 *.pck
 *.exe
 

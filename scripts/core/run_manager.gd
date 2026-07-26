@@ -6,14 +6,15 @@ extends Node
 const ROOM_SCENE := preload("res://scenes/rooms/Room.tscn")
 const PLAYER_SCENE := preload("res://scenes/player/Player.tscn")
 
-## Fourteen floors, one boss each. The descent runs from where toys are loved,
-## through where they are stored, to where they are made and unmade — the
-## further down you go the less any of it is about children.
+## Fourteen floors, one boss each. The place replicates somewhere you would
+## train — a playground, a gym, a steam room, an arena — and the deeper it
+## goes the worse the replication gets, until it stops pretending it was ever
+## about training and admits it is about the title.
 const FLOOR_NAMES := [
-	"THE NURSERY", "THE PLAYROOM", "THE ATTIC", "THE TOY FACTORY",
-	"THE STOCKROOM", "THE PACKING LINE", "THE SORTING FLOOR",
-	"THE LOST PROPERTY", "THE DOLL WARD", "THE MOULD SHOP",
-	"THE PAINT LINE", "THE FURNACE", "THE QUIET SHELF", "THE LAST BOX",
+	"THE PLAYGROUND", "THE GYM", "THE STEAM ROOM", "THE UNDERGROUND ARENA",
+	"THE LOCKER ROOMS", "THE LAP POOL", "THE WEIGHT CAGE",
+	"THE TROPHY HALL", "THE CHALK ROOM", "THE COLD PLUNGE",
+	"THE BLOOD GYM", "THE RING", "THE CROWD", "THE PODIUM",
 ]
 
 var generator: FloorGenerator

@@ -48,7 +48,7 @@ extends Resource
 ## Room kinds this suits, lowercase: start combat treasure shop elite secret.
 ## Boss rooms never take a layout — an arena has to stay an arena.
 @export var kinds: PackedStringArray = PackedStringArray(["combat", "elite"])
-## First floor index this may appear on (0 = the Nursery).
+## First floor index this may appear on (0 = the Playground).
 @export var min_floor: int = 0
 ## Last floor index, or -1 for no cap. Use it to retire the gentle layouts.
 @export var max_floor: int = -1

@@ -38,7 +38,7 @@ enum Behaviour {
 @export var contact_damage: int = 1
 @export var knockback_resist: float = 0.0   ## 0 = shoved easily, 1 = immovable
 @export var score: int = 1
-## First floor index this enemy may appear on (0 = Nursery).
+## First floor index this enemy may appear on (0 = the Playground).
 @export var min_floor: int = 0
 
 @export_group("Behaviour")

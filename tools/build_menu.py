@@ -27,9 +27,10 @@ PENCIL = (196, 192, 184)
 PENCIL_DK = (176, 172, 164)
 
 INK = (38, 40, 52)
-LOGO_HI = (238, 246, 255)
-LOGO_MID = (150, 186, 226)
-LOGO_LO = (96, 132, 178)
+# Fight-poster red: the wordmark stopped being embroidery and became a claim.
+LOGO_HI = (255, 240, 230)
+LOGO_MID = (226, 118, 92)
+LOGO_LO = (164, 62, 52)
 
 # 5x7 pixel font — only the letters the wordmark needs.
 GLYPHS = {
@@ -40,6 +41,10 @@ GLYPHS = {
     "U": ["#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
     "F": ["#####", "#....", "#....", "####.", "#....", "#....", "#...."],
     "D": ["####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####."],
+    "N": ["#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#", "#...#"],
+    "R": ["####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"],
+    "O": [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
+    "G": [".####", "#....", "#....", "#..##", "#...#", "#...#", ".###."],
     " ": [".....", ".....", ".....", ".....", ".....", ".....", "....."],
 }
 GW, GH = 5, 7
@@ -236,11 +241,13 @@ def note(size=(268, 236)):
 
 
 def logo():
-    # Sized so the whole lockup, tufts included, fits inside 640 with margin —
-    # at scale 9 the wadding ran off both edges of the screen.
-    big = outlined_word("STUFFED", scale=7, outline=3)
-    small = outlined_word("THE", scale=3, outline=2)
-    tuft_w = 96
+    # Sized so the whole lockup, tufts included, fits inside 640 with margin.
+    # STRONGEST is nine letters, so it takes scale 6 where STUFFED took 7,
+    # and the tufts slim down to keep the lockup off the screen edges. The
+    # stuffing stays: it is what the opponents are full of.
+    big = outlined_word("STRONGEST", scale=6, outline=3)
+    small = outlined_word("ENTER THE", scale=3, outline=2)
+    tuft_w = 84
     lw = big.width + tuft_w * 2
     lh = big.height + small.height + 6
     img = Image.new("RGBA", (lw, lh), (0, 0, 0, 0))
