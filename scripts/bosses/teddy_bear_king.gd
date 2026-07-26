@@ -48,8 +48,8 @@ func _ready() -> void:
 
 func _do_intro() -> void:
 	state = State.INTRO
-	EventBus.boss_spawned.emit(self, "THE TEDDY BEAR KING")
-	EventBus.boss_intro_started.emit("THE TEDDY BEAR KING", "Sovereign of the Playground")
+	EventBus.boss_spawned.emit(self, "PLAYGROUND KING")
+	EventBus.boss_intro_started.emit("THE TEDDY BEAR KING", "STRONGEST AMONGST CLASSMATES")
 	AudioManager.play_sfx(sfx_roar, 0.0, 3.0)
 	EventBus.screen_shake.emit(9.0, 1.4)
 	anim.play(&"idle")
@@ -259,7 +259,7 @@ func _do_sweep() -> void:
 		get_parent().add_child(p)
 		p.global_position = from
 		p.setup(null, dir * (95.0 + 12.0 * float(phase)), 1.0, false, 900.0, 0, false)
-	EventBus.toast.emit("GET BEHIND SOMETHING", Color(1, 0.7, 0.55))
+	EventBus.toast.emit("WARNING", Color(1, 0.7, 0.55))
 	_end_attack(1.5)
 
 
@@ -278,7 +278,7 @@ func _do_summon() -> void:
 			_minions += 1
 			Effects.spawn_burst(get_parent(), e.global_position,
 				Color(0.9, 0.85, 0.7), 8, 90.0, 2.5)
-	EventBus.toast.emit("HE CALLS FOR HIS SUBJECTS", Color(1, 0.6, 0.6))
+	EventBus.toast.emit("HIS UNDERCLASSMEN ASSIST", Color(1, 0.6, 0.6))
 	_end_attack(1.4)
 
 
@@ -344,7 +344,7 @@ func _advance_phase(p: int) -> void:
 	EventBus.flash.emit(Color(1, 0.9, 0.6, 0.30), 0.25)
 	Effects.spawn_pop(get_parent(), global_position, 3.0)
 	Effects.spawn_stuffing(get_parent(), global_position, 30, 200.0, 4.0)
-	EventBus.toast.emit("THE CROWN SLIPS" if p == 2 else "HE IS COMING APART",
+	EventBus.toast.emit("TAKE HIS CROWN" if p == 2 else "HE IS NOT WORTHY",
 		Color(1, 0.55, 0.5))
 	_end_attack(0.5)
 
@@ -360,7 +360,7 @@ func _die() -> void:
 	Effects.spawn_pop(get_parent(), global_position, 4.2)
 	Effects.spawn_stuffing(get_parent(), global_position, 46, 240.0, 5.0)
 	EventBus.boss_defeated.emit(self)
-	EventBus.toast.emit("THE TEDDY BEAR KING IS STUFFING", Color(1, 0.9, 0.5))
+	EventBus.toast.emit("THE KING IS FALLEN", Color(1, 0.9, 0.5))
 	var t := create_tween()
 	t.tween_interval(1.1)
 	t.tween_property(self, "modulate:a", 0.0, 0.7)

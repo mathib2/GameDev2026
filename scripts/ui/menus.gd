@@ -200,11 +200,11 @@ func _add_volume_controls() -> void:
 func setup(victory: bool) -> void:
 	if victory:
 		_title.text = "THE STRONGEST"
-		_subtitle.text = "nothing else steps forward. you walk home.\n%d toys torn open · %d coins · %ds" % [
+		_subtitle.text = "nothing else steps forward. you walk home.\n%d slimed · %d coins · %ds" % [
 			GameState.kills, GameState.coins, int(GameState.run_time)]
 	else:
 		_title.text = "NOT STRONG ENOUGH"
-		_subtitle.text = "they got you in %s\n%d toys torn open · %d coins · %ds" % [
+		_subtitle.text = "Fell in %s\n%d enemies slimed · %d coins · %ds" % [
 			RunManager.floor_name().to_lower(), GameState.kills, GameState.coins,
 			int(GameState.run_time)]
 

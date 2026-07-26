@@ -26,7 +26,7 @@ const SHOT_STATIC := preload("res://assets/effects/fx_static.png")
 const SHOT_FEATHER := preload("res://assets/effects/fx_feather.png")
 
 const TITLE := "?????"
-const SUBTITLE := "Even the Place Looks Away"
+const SUBTITLE := "How disgusting"
 
 ## Highest base in the roster on the deepest floor: with the shared
 ## (1 + 0.35 * floor_index) multiplier this lands at well over twice Jack's
@@ -388,7 +388,7 @@ func _advance_phase(p: int) -> void:
 	EventBus.screen_shake.emit(8.0, 0.6)
 	EventBus.flash.emit(Color(1, 1, 1, 0.35), 0.2)
 	Effects.spawn_burst(get_parent(), global_position, Color(0.92, 0.92, 0.95), 26, 190.0, 4.0)
-	EventBus.toast.emit("IT IS CLOSER THAN IT WAS" if p == 2 else "STOP LOOKING",
+	EventBus.toast.emit("SUCH A CREATURE SHOULD NOT EXIST" if p == 2 else "CLEANSE IT",
 		Color(0.92, 0.92, 0.95))
 	# the floor sends help. Safe now that boss rooms only clear through
 	# boss_defeated — a dead mite can no longer open the doors early.
@@ -417,7 +417,7 @@ func _die() -> void:
 	EventBus.screen_shake.emit(11.0, 1.0)
 	Effects.spawn_burst(get_parent(), global_position, Color(0.92, 0.92, 0.95), 40, 220.0, 5.0)
 	EventBus.boss_defeated.emit(self)
-	EventBus.toast.emit("IT IS GONE. PROBABLY.", Color(0.92, 0.92, 0.95))
+	EventBus.toast.emit("*&$^%*&#$%*&^%#*#%*&", Color(0.92, 0.92, 0.95))
 	var t := create_tween()
 	t.tween_interval(1.2)
 	t.tween_property(self, "modulate:a", 0.0, 0.8)
