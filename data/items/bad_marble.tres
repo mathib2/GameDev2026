@@ -1,18 +1,19 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://dt4lp5bhryhdn"]
 
-[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/items/item_bad_marble.png" id="2_icon"]
-[ext_resource type="AudioStream" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
+[ext_resource type="Script" uid="uid://dmlmv4wgt287w" path="res://scripts/data/item_data.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cdirpy6vqbldx" path="res://assets/items/item_bad_marble.png" id="2_icon"]
+[ext_resource type="AudioStream" uid="uid://bwqsql5vtgx4u" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
 
 [resource]
 script = ExtResource("1_script")
 id = &"bad_marble"
 display_name = "Bad Marble"
 description = "Contact armour up."
-flavour = "it looks back"
+flavour = "What marble?"
 icon = ExtResource("2_icon")
-modifiers = {&"contact_armour": 1, &"speed_mult": 1.05}
-random_effect = false
+modifiers = {
+&"contact_armour": 1,
+&"speed_mult": 1.05
+}
 weight = 0.6
-unique = true
 sfx_pickup = ExtResource("3_sfx")

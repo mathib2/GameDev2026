@@ -28,30 +28,30 @@ const FADE_OUT := 0.9
 
 ## Shown once, when a run starts.
 const OPENING: Array[String] = [
-	"PATRICK IS SIXTEEN.",
-	"He has never lost at anything.",
-	"The place downstairs looks almost like a playground.",
+	"PATRICK IS A YOUNG MAN.",
+	"HE WAS TOLD HE IS NOT THE STRONGEST,",
+	"HE WILL PROVE THEM WRONG",
 ]
 
 ## One per floor, keyed by index. Past the end, the deep floors get nothing —
 ## silence is better than filler.
 const FLOORS: Array = [
-	["THE PLAYGROUND", "Where you first compete."],
+	["THE PLAYGROUND", "Where you first show your strength."],
 	["THE GYM", "Build your muscles."],
 	["THE STEAM ROOM", "It's getting hot in here."],
 	["THE UNDERGROUND ARENA", "The final test."],
-	["????", "There is no fifth floor."],
+	["????", "?-?"],
 ]
 
 const VICTORY: Array[String] = [
-	"THE PLACE RUNS OUT OF FLOORS.",
-	"Nothing else steps forward. The lights stay on.",
-	"Patrick walks home as the strongest.",
+	"THERE IS NO BEINGS LEFT",
+	"Patrick has proved his strength",
+	"...",
 ]
 
 const DEFEAT: Array[String] = [
-	"THE TITLE STAYS HERE.",
-	"It will still be here when you come back.",
+	"PATRICK DOES NOT LOSE",
+	"HE DOES NOT REST, HE GOES AGAIN",
 ]
 
 var _root: Control

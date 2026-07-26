@@ -1,18 +1,18 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://rkmlfjtg76cj"]
 
-[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/items/item_first_aid.png" id="2_icon"]
-[ext_resource type="AudioStream" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
+[ext_resource type="Script" uid="uid://dmlmv4wgt287w" path="res://scripts/data/item_data.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bosncm5x4tms7" path="res://assets/items/item_first_aid.png" id="2_icon"]
+[ext_resource type="AudioStream" uid="uid://bwqsql5vtgx4u" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
 
 [resource]
 script = ExtResource("1_script")
 id = &"first_aid"
 display_name = "First Aid Kit"
 description = "Max health up."
-flavour = "expired. still counts"
+flavour = "pills here"
 icon = ExtResource("2_icon")
-modifiers = {&"max_health": 2}
-random_effect = false
+modifiers = {
+&"max_health": 2
+}
 weight = 0.9
-unique = true
 sfx_pickup = ExtResource("3_sfx")

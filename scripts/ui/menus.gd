@@ -26,7 +26,7 @@ func _ready() -> void:
 		Mode.MAIN:
 			_dress_main_menu()
 			_title.text = ""          # the logo image carries the name now
-			_subtitle.text = "he is the strongest. nobody has ever checked."
+			_subtitle.text = "he is the strongest. only if he survives the cursed dungeon"
 			if SaveManager.runs > 0:
 				_subtitle.text += "\nbest: floor %d · %d toys torn open lifetime" % [
 					SaveManager.best_floor, SaveManager.lifetime_kills]

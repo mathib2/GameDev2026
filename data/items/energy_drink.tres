@@ -1,18 +1,18 @@
-[gd_resource type="Resource" script_class="ItemData" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://07fk7r4nvjis"]
 
-[ext_resource type="Script" path="res://scripts/data/item_data.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/items/item_energy_drink.png" id="2_icon"]
-[ext_resource type="AudioStream" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
+[ext_resource type="Script" uid="uid://dmlmv4wgt287w" path="res://scripts/data/item_data.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cav0tjam8tcp3" path="res://assets/items/item_energy_drink.png" id="2_icon"]
+[ext_resource type="AudioStream" uid="uid://bwqsql5vtgx4u" path="res://assets/audio/sfx/pickup_item.wav" id="3_sfx"]
 
 [resource]
 script = ExtResource("1_script")
 id = &"energy_drink"
 display_name = "Energy Drink"
 description = "Attack speed up."
-flavour = "legally distinct"
+flavour = "Sponsored by G-OIL"
 icon = ExtResource("2_icon")
-modifiers = {&"fire_rate_mult": 1.18}
-random_effect = false
-weight = 1.0
+modifiers = {
+&"fire_rate_mult": 1.18
+}
 unique = false
 sfx_pickup = ExtResource("3_sfx")

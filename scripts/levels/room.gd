@@ -715,10 +715,10 @@ func spawn_crate_drop(kind: String, pos: Vector2) -> void:
 			spawn_pickup(kind, pos)
 		"weapon":
 			_spawn_weapon_pedestal(pos)
-			_announce_drop("SOMETHING WAS IN THERE", Color(0.7, 0.9, 1.0), pos)
+			_announce_drop("WEAPON DROPPED", Color(0.7, 0.9, 1.0), pos)
 		"item":
 			_spawn_pedestal(pos)
-			_announce_drop("SOMETHING WAS IN THERE", Color(1, 0.9, 0.4), pos)
+			_announce_drop("ITEM DROPPED", Color(1, 0.9, 0.4), pos)
 		"skill":
 			var id := GameState.random_unmaxed_skill()
 			if id != &"" and GameState.grant_skill(id):
