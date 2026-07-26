@@ -100,4 +100,45 @@ func _run() -> void:
 		if offers > 0:
 			got += 1
 	print("[AUDIT] runs offered >=1 weapon: %.0f%%" % (100.0 * float(got) / float(_runs)))
+
+	_audit_layouts(rng)
 	get_tree().quit(0)
+
+
+## Room layouts: what the library covers, and whether the generator keeps its
+## promises over enough rooms to be trusted.
+##
+## The authored library is already validated at load — ContentDB refuses a
+## layout that blocks a door lane — so what is left worth counting is coverage
+## (a room kind with no layouts quietly falls back to a bare room) and the
+## generator, which is safe *by construction* rather than by check(), and so is
+## exactly the kind of claim that deserves to be counted rather than believed.
+func _audit_layouts(rng: RandomNumberGenerator) -> void:
+	print("\n[AUDIT] room layouts indexed: %d" % ContentDB.layouts.size())
+	var deepest := RunManager.total_floors() - 1
+	for kind in FloorGenerator.KIND_NAMES:
+		if kind == "boss":
+			continue                  # a boss arena never takes a layout
+		var early := ContentDB.layouts_for(kind, 0).size()
+		var late := ContentDB.layouts_for(kind, deepest).size()
+		var note := "" if early > 0 else "   <- none on floor 0"
+		print("  %-9s %2d on floor 0, %2d on floor %d%s" % [kind, early, late, deepest, note])
+
+	var trials := 600
+	var crates := 0
+	var lane_blocked := 0
+	var no_anchors := 0
+	for i in trials:
+		var l := RoomLayout.procedural(rng, i % RunManager.total_floors())
+		crates += l.obstacles.size()
+		if l.enemy_spots.is_empty() and l.big_spots.is_empty():
+			no_anchors += 1
+		for t in l.obstacles:
+			if RoomLayout.is_lane(t):
+				lane_blocked += 1
+				break
+	print("[AUDIT] %d generated rooms: %.1f crates avg, %d blocked a door lane, "
+		% [trials, float(crates) / float(trials), lane_blocked]
+		+ "%d had nowhere to spawn" % no_anchors)
+	if lane_blocked > 0 or no_anchors > 0:
+		printerr("[AUDIT] FAIL: the room generator produced an unplayable room")

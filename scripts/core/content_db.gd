@@ -12,6 +12,7 @@ var enemies: Dictionary = {}   ## StringName -> EnemyData
 var weapons: Dictionary = {}   ## StringName -> WeaponData
 var items: Dictionary = {}     ## StringName -> ItemData
 var bosses: Dictionary = {}    ## StringName -> BossData
+var layouts: Dictionary = {}   ## StringName -> RoomLayoutData
 
 var _errors: Array[String] = []
 
@@ -21,12 +22,13 @@ func _ready() -> void:
 
 
 func reload() -> void:
-	enemies.clear(); weapons.clear(); items.clear(); bosses.clear(); _errors.clear()
+	enemies.clear(); weapons.clear(); items.clear(); bosses.clear()
+	layouts.clear(); _errors.clear()
 	_scan(DATA_ROOT)
 	for e in _errors:
 		push_warning("[ContentDB] %s" % e)
-	print("[ContentDB] %d enemies, %d weapons, %d items, %d data-bosses"
-		% [enemies.size(), weapons.size(), items.size(), bosses.size()])
+	print("[ContentDB] %d enemies, %d weapons, %d items, %d data-bosses, %d room layouts"
+		% [enemies.size(), weapons.size(), items.size(), bosses.size(), layouts.size()])
 
 
 func _scan(path: String) -> void:
@@ -73,6 +75,16 @@ func _index(path: String) -> void:
 	elif res is WeaponData: bucket = weapons
 	elif res is ItemData: bucket = items
 	elif res is BossData: bucket = bosses
+	elif res is RoomLayoutData:
+		# A layout that blocks a door lane or strands an enemy behind cover
+		# soft-locks the run it turns up in, so it is refused at the door
+		# rather than shipped. The room falls back to a generated layout.
+		var layout := res as RoomLayoutData
+		var problems := layout.validate()
+		if not problems.is_empty():
+			_errors.append("%s is not a usable layout: %s" % [path, ", ".join(problems)])
+			return
+		bucket = layouts
 	else:
 		_errors.append("%s has an unrecognised type; skipped" % path)
 		return
@@ -119,6 +131,34 @@ func random_weapon(exclude: StringName = &"") -> WeaponData:
 	if pool.is_empty():
 		return null
 	return pool[randi() % pool.size()]
+
+
+## Every authored layout that fits this room kind and depth. Kind names are the
+## lowercase RoomKind names — see FloorGenerator.kind_name().
+func layouts_for(kind_name: String, floor_index: int) -> Array:
+	var pool: Array = []
+	for l in layouts.values():
+		if l.suits(kind_name, floor_index):
+			pool.append(l)
+	return pool
+
+
+## Weighted pick, drawn from the room's own RNG so walking back into a room
+## rebuilds the same furniture. Null when the library has nothing to offer,
+## which is the generator's cue to invent something.
+func random_layout(kind_name: String, floor_index: int, rng: RandomNumberGenerator) -> RoomLayoutData:
+	var pool := layouts_for(kind_name, floor_index)
+	if pool.is_empty():
+		return null
+	var total := 0.0
+	for l in pool:
+		total += maxf(0.01, l.weight)
+	var roll := rng.randf() * total
+	for l in pool:
+		roll -= maxf(0.01, l.weight)
+		if roll <= 0.0:
+			return l
+	return pool.back()
 
 
 func enemies_for_floor(index: int) -> Array:

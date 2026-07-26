@@ -185,6 +185,10 @@ func _report_and_quit() -> void:
 	var want := RunManager.total_floors()
 	if _visited < 3: _failures.append("visited fewer than 3 rooms")
 	if GameState.kills <= 0: _failures.append("killed nothing")
+	# Layouts are data, and data can fail to load without anything crashing —
+	# the run would just quietly play out in empty boxes.
+	if ContentDB.layouts.is_empty():
+		_failures.append("no room layouts indexed; every room will be bare")
 	# Every floor has its own boss script, and a boss script is the easiest
 	# thing in this project to break without noticing, so the gate is "all of
 	# them ran" rather than a fixed number.

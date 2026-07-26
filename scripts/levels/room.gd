@@ -38,6 +38,11 @@ var info                       ## FloorGenerator.RoomInfo
 var alive_enemies: int = 0
 var _doors: Array = []
 var _rng := RandomNumberGenerator.new()
+## Separate stream for the layout. _paint_floor() draws 240 tiles off _rng, so
+## anything that ever changes how many rolls the visuals take would reshuffle
+## the furniture of every room in the game.
+var _layout_rng := RandomNumberGenerator.new()
+var _layout: RoomLayout = null
 var _tint: Color = Color.WHITE
 
 ## Per-floor ambience tints so the Nursery, Playroom, Attic and Toy
@@ -49,37 +54,52 @@ const FLOOR_TINTS: Array[Color] = [
 	Color(0.88, 0.96, 1.0),
 ]
 
-## Obstacle layout templates, Isaac-style. Tile coords keep the door
-## lanes (x 9-11, y 5-7) and a 2-tile border clear so rooms always path.
-const LAYOUT_CORNERS: Array = [
-	Vector2i(4, 3), Vector2i(5, 3), Vector2i(4, 4), Vector2i(5, 4),
-	Vector2i(14, 3), Vector2i(15, 3), Vector2i(14, 4), Vector2i(15, 4),
-	Vector2i(4, 8), Vector2i(5, 8), Vector2i(4, 9), Vector2i(5, 9),
-	Vector2i(14, 8), Vector2i(15, 8), Vector2i(14, 9), Vector2i(15, 9),
-]
-const LAYOUT_PILLARS: Array = [
-	Vector2i(5, 3), Vector2i(8, 4), Vector2i(12, 4), Vector2i(15, 3),
-	Vector2i(5, 9), Vector2i(8, 8), Vector2i(12, 8), Vector2i(15, 9),
-]
-const LAYOUT_RAILS: Array = [
-	Vector2i(4, 4), Vector2i(5, 4), Vector2i(6, 4), Vector2i(13, 4), Vector2i(14, 4), Vector2i(15, 4),
-	Vector2i(4, 8), Vector2i(5, 8), Vector2i(6, 8), Vector2i(13, 8), Vector2i(14, 8), Vector2i(15, 8),
-]
-const LAYOUT_DIAMOND: Array = [
-	Vector2i(8, 3), Vector2i(12, 3), Vector2i(6, 4), Vector2i(14, 4),
-	Vector2i(6, 8), Vector2i(14, 8), Vector2i(8, 9), Vector2i(12, 9),
-]
+## How often a combat room ignores the authored library and takes a generated
+## layout instead. The library is finite; a fourteen-floor run is not, and a
+## player who has learned every room has stopped reading them.
+const PROC_CHANCE := 0.3
 
 signal cleared()
 
 
 func build(room_info) -> void:
 	info = room_info
-	_rng.seed = info.seed_value if info.seed_value != 0 else randi()
+	var seed_value: int = info.seed_value if info.seed_value != 0 else randi()
+	_rng.seed = seed_value
+	_layout_rng.seed = seed_value ^ 0x5EED1A70
+	_layout = _choose_layout()
 	_tint = FLOOR_TINTS[clampi(GameState.floor_index, 0, FLOOR_TINTS.size() - 1)]
 	_paint_floor()
 	_build_walls()
 	_scatter_decor()
+
+
+## Where a room stops being a box and becomes a fight.
+##
+## Authored layouts in data/rooms come first — cover and enemy anchors designed
+## against each other, the way Isaac and Gungeon build theirs. Combat rooms roll
+## against PROC_CHANCE to take a generated one instead, and anything the library
+## cannot serve falls through to the generator, so a room is never accidentally
+## bare.
+func _choose_layout() -> RoomLayout:
+	# A boss arena stays an arena. Those fights are built around reading a
+	# telegraph and having somewhere to be; crates would only be something to
+	# get caught on mid-dodge.
+	if info.kind == FloorGenerator.RoomKind.BOSS:
+		return null
+
+	var may_generate: bool = info.kind in [FloorGenerator.RoomKind.COMBAT,
+		FloorGenerator.RoomKind.ELITE]
+	if may_generate and _layout_rng.randf() < PROC_CHANCE:
+		return RoomLayout.procedural(_layout_rng, GameState.floor_index)
+
+	var kind := FloorGenerator.kind_name(info.kind)
+	var data := ContentDB.random_layout(kind, GameState.floor_index, _layout_rng)
+	if data != null:
+		return RoomLayout.from_data(data, _layout_rng)
+	# Nothing authored fits. Combat improvises; a shop or a treasure room would
+	# rather stay the clean showroom it has always been.
+	return RoomLayout.procedural(_layout_rng, GameState.floor_index) if may_generate else null
 
 
 # ── visuals ───────────────────────────────────────────────────────────────
@@ -190,22 +210,22 @@ func _physics_process(_delta: float) -> void:
 
 
 func _scatter_decor() -> void:
-	if info.kind == FloorGenerator.RoomKind.BOSS:
+	if _layout == null:
 		return
-	# special rooms stay clean showrooms
-	if info.kind in [FloorGenerator.RoomKind.SHOP, FloorGenerator.RoomKind.TREASURE,
-			FloorGenerator.RoomKind.SECRET]:
-		return
-	# pick a layout template per room (seeded, so re-entry looks the same);
-	# an empty pick falls back to the classic random scatter
-	var layouts: Array = [[], LAYOUT_CORNERS, LAYOUT_PILLARS, LAYOUT_RAILS, LAYOUT_DIAMOND]
-	var pick: Array = layouts[_rng.randi_range(0, layouts.size() - 1)]
-	if pick.is_empty():
-		_scatter_random()
+	for t in _layout.obstacles:
+		_spawn_crate(tile_center(t))
+	# A layout that places its own clutter has an opinion about where it goes;
+	# one that does not gets the old wall-hugging scatter.
+	if _layout.props.is_empty():
+		_scatter_props()
 	else:
-		for t in pick:
-			_spawn_crate(Vector2(t.x * TILE + 16, t.y * TILE + 16))
-	_scatter_props()
+		for t in _layout.props:
+			_place_prop(tile_center(t))
+
+
+## Tile coords to the middle of that tile, in room pixels.
+func tile_center(t: Vector2i) -> Vector2:
+	return Vector2(t.x * TILE + TILE * 0.5, t.y * TILE + TILE * 0.5)
 
 
 ## Purely cosmetic clutter — no collision, no pickup, nothing to shoot. Rooms
@@ -232,29 +252,19 @@ func _scatter_props() -> void:
 	spots.shuffle()
 
 	for i in mini(_rng.randi_range(3, 6), spots.size()):
-		var t: Vector2i = spots[i]
-		var s := Sprite2D.new()
-		s.texture = BOOKS_TEX
-		s.position = Vector2(t.x * TILE + 16, t.y * TILE + 20)
-		# knocked back and dimmed so it sits behind the action instead of
-		# competing with the crates, which are actually interactive
-		s.modulate = _tint * Color(0.62, 0.6, 0.66, 1.0)
-		s.flip_h = _rng.randf() < 0.5
-		s.z_index = -5
-		add_child(s)
+		_place_prop(tile_center(spots[i]) + Vector2(0, 4))
 
 
-func _scatter_random() -> void:
-	var count := _rng.randi_range(2, 6)
-	for i in count:
-		var tx := _rng.randi_range(3, COLS - 4)
-		var ty := _rng.randi_range(3, ROWS - 4)
-		# keep the middle and the door lanes clear
-		if absi(tx - COLS / 2) < 3 and absi(ty - ROWS / 2) < 3:
-			continue
-		if absi(tx - COLS / 2) <= 1 or absi(ty - ROWS / 2) <= 1:
-			continue
-		_spawn_crate(Vector2(tx * TILE + 16, ty * TILE + 16))
+func _place_prop(pos: Vector2) -> void:
+	var s := Sprite2D.new()
+	s.texture = BOOKS_TEX
+	s.position = pos
+	# knocked back and dimmed so it sits behind the action instead of
+	# competing with the crates, which are actually interactive
+	s.modulate = _tint * Color(0.62, 0.6, 0.66, 1.0)
+	s.flip_h = _rng.randf() < 0.5
+	s.z_index = -5
+	add_child(s)
 
 
 func _spawn_crate(pos: Vector2) -> void:
@@ -296,13 +306,14 @@ func populate(floor_index: int) -> void:
 		FloorGenerator.RoomKind.TREASURE:
 			# Sometimes the treasure is a whole new weapon, sometimes a chest
 			# you have to walk into to find out what is in it.
+			var where := _reward_point()
 			var roll := _rng.randf()
 			if roll < 0.45:
-				_spawn_weapon_pedestal(Vector2(W * 0.5, H * 0.5))
+				_spawn_weapon_pedestal(where)
 			elif roll < 0.65:
-				_spawn_chest(Vector2(W * 0.5, H * 0.5), true, 0)
+				_spawn_chest(where, true, 0)
 			else:
-				_spawn_pedestal()
+				_spawn_pedestal(where)
 			_open_doors()
 		FloorGenerator.RoomKind.SHOP:
 			_spawn_shop()
@@ -326,15 +337,13 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 		_open_doors()
 		return
 	var count := int(round((3 + floor_index) * difficulty)) + _rng.randi_range(0, 2)
+	var spots := _spawn_points(count)
+	# `E` in a layout means "the big one stands here", and _spawn_points puts
+	# that anchor first — so the room owes it a champion.
+	var has_big: bool = _layout != null and not _layout.big_spots.is_empty()
+
 	var placed := 0
-	var guard := 0
-	while placed < count and guard < 200:
-		guard += 1
-		var pos := Vector2(
-			_rng.randf_range(TILE * 2.5, W - TILE * 2.5),
-			_rng.randf_range(TILE * 2.5, H - TILE * 2.5))
-		if pos.distance_to(Vector2(W * 0.5, H * 0.5)) < 90.0:
-			continue     # never spawn on top of the player's entry point
+	for pos in spots:
 		var data: EnemyData = pool[_rng.randi_range(0, pool.size() - 1)]
 		var e := ENEMY_SCENE.instantiate()
 		e.data = data
@@ -349,7 +358,7 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 		if difficulty > 1.2:
 			e.scale = Vector2(1.25, 1.25)
 			e.health = data.max_health * 1.9 * depth
-		elif _rng.randf() < 0.08 + 0.03 * floor_index:
+		elif (placed == 0 and has_big) or _rng.randf() < 0.08 + 0.03 * floor_index:
 			# champion variant: tinted, tougher, always pays out a coin
 			e.champion = true
 			e.modulate = Color(1.3, 0.75, 0.8)
@@ -361,6 +370,61 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 		_open_doors()
 	else:
 		_close_doors()
+
+
+## Where the fight starts.
+##
+## The layout's anchors come first: they were placed against that room's cover
+## on purpose, which is the whole reason the layout exists. If the floor calls
+## for more toys than the layout anchors, the rest fill open floor at random —
+## a deep floor should never be capped by how many `e`s someone typed.
+##
+## Anything landing on the player is dropped. They are already standing in the
+## room when this runs, having just walked through a door, and a toy appearing
+## in their face is a hit they had no way to read.
+func _spawn_points(count: int) -> Array:
+	var here := _player_position()
+	var out: Array = []
+	var anchors: Array = []
+	if _layout != null:
+		anchors.append_array(_layout.big_spots)
+		anchors.append_array(_layout.enemy_spots)
+	for t in anchors:
+		if out.size() >= count:
+			break
+		var p := tile_center(t) + Vector2(_rng.randf_range(-5.0, 5.0), _rng.randf_range(-5.0, 5.0))
+		if p.distance_to(here) < 72.0:
+			continue
+		out.append(p)
+
+	var guard := 0
+	while out.size() < count and guard < 240:
+		guard += 1
+		var p := Vector2(
+			_rng.randf_range(TILE * 2.5, W - TILE * 2.5),
+			_rng.randf_range(TILE * 2.5, H - TILE * 2.5))
+		if p.distance_to(here) < 90.0:
+			continue
+		if _tile_blocked(p):
+			continue
+		out.append(p)
+	return out
+
+
+## The player is placed by RunManager before populate() runs, so this is where
+## they actually are — the old code assumed the middle of the room, which was
+## only ever true in the room the run starts in.
+func _player_position() -> Vector2:
+	var p := get_tree().get_first_node_in_group("player") as Node2D
+	if p != null and is_instance_valid(p):
+		return to_local(p.global_position)
+	return Vector2(W * 0.5, H * 0.5)
+
+
+func _tile_blocked(pos: Vector2) -> bool:
+	if _layout == null:
+		return false
+	return _layout.obstacles.has(Vector2i(int(pos.x / TILE), int(pos.y / TILE)))
 
 
 ## One boss per floor, in a fixed order.
@@ -388,6 +452,16 @@ func _spawn_boss(floor_index: int) -> void:
 	b.global_position = Vector2(W * 0.5, H * 0.35)
 	b.floor_index = floor_index
 	alive_enemies = 1
+
+
+## Where a room wants its prize. A layout can nominate the spot with `r` —
+## a vault built around an off-centre plinth reads better than one with the
+## plinth bolted to the middle regardless of what is drawn around it.
+func _reward_point(fallback: Vector2 = Vector2(W * 0.5, H * 0.5)) -> Vector2:
+	if _layout == null or _layout.reward_spots.is_empty():
+		return fallback
+	return tile_center(_layout.reward_spots[_rng.randi_range(0,
+		_layout.reward_spots.size() - 1)])
 
 
 func _spawn_pedestal(pos: Vector2 = Vector2(W * 0.5, H * 0.5)) -> void:

@@ -81,6 +81,39 @@ Elites are picked from ordinary combat rooms on deeper floors.
 a `RoomInfo`. There is no hand-authored scene per room, so two people adding
 rooms cannot conflict.
 
+## Room layouts
+
+What is *inside* a room is a layout: cover and enemy anchors designed against
+each other, the way Isaac and Gungeon build theirs. Scattering obstacles at
+random and then dropping enemies wherever they land produces a box with junk in
+it; a layout produces a fight with a shape.
+
+```
+data/rooms/*.tres ──┐
+  authored ASCII    ├─▶ Room._choose_layout() ──▶ crates + enemy anchors
+RoomLayout          │      seeded per room, so re-entry is identical
+  .procedural() ────┘
+```
+
+Authored layouts come first, drawn by weight from those tagging the room's kind
+and depth. Combat rooms roll `PROC_CHANCE` to take a generated one instead, and
+anything the library cannot serve falls through to the generator — the library
+is finite and a fourteen-floor run is not.
+
+Two rules hold both paths, by different means:
+
+| | rule | authored | generated |
+|---|---|---|---|
+| 1 | nothing solid in a door lane | `check()` rejects it at load | never writes to a lane |
+| 2 | nothing walled in | `check()` flood-fills from the centre | anchors drawn from the reachable set |
+
+Rule 1 is safety: walls are not breakable and doors are the only way out, so a
+blocked lane is a soft-locked run. Rule 2 is quality — crates *are* breakable,
+so a sealed enemy is merely a room that will not open until the player smashes
+their way in.
+
+A rejected layout is logged with its reason and skipped, never shipped.
+
 ## Skills
 
 Items are *found*; skills are *bought*. `GameState.SKILLS` defines five, each

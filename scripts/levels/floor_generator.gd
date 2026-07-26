@@ -13,6 +13,16 @@ enum RoomKind { START, COMBAT, TREASURE, SHOP, ELITE, SECRET, BOSS }
 const GRID := 11
 const MID := 5
 
+## Lowercase kind names, in enum order. Layouts in data/rooms tag themselves
+## with these rather than an enum index, so inserting a room kind later cannot
+## silently re-point a hundred data files at the wrong one.
+const KIND_NAMES: Array[String] = ["start", "combat", "treasure", "shop",
+	"elite", "secret", "boss"]
+
+
+static func kind_name(kind: int) -> String:
+	return KIND_NAMES[kind] if kind >= 0 and kind < KIND_NAMES.size() else "combat"
+
 class RoomInfo:
 	var gx: int
 	var gy: int
@@ -62,6 +72,9 @@ func generate(floor_index: int, rng: RandomNumberGenerator) -> void:
 	start_room.kind = RoomKind.START
 	start_room.cleared = true
 	start_room.spawned = true
+	# Every other room gets a seed below; without one here the start room fell
+	# back to randi() and re-dressed itself every time the player walked back in.
+	start_room.seed_value = rng.randi()
 	_put(start_room)
 
 	var guard := 0

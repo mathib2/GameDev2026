@@ -48,6 +48,12 @@ special rooms, so the boss is always the furthest point from the start.
 
 **Room types:** combat · treasure · shop · elite · secret · boss
 
+**No two rooms are laid out the same.** Every room draws a layout — where the
+cover stands *and* where the fight starts, designed together — from a library of
+38 authored ones in `data/rooms`, or from a generator that invents symmetric
+ones when the library runs dry. It is seeded per room, so walking back in finds
+the room you left.
+
 **Ten enemies**, each with idle/walk/attack/hurt/death animations and its own
 movement archetype:
 
@@ -72,7 +78,7 @@ Steel Toecaps).
 
 ```
 assets/     characters/ enemies/ bosses/ environment/ items/ effects/ audio/
-data/       enemies/ weapons/ items/     ← the game's content, as .tres
+data/       enemies/ weapons/ items/ bosses/ rooms/   ← content, as .tres
 scenes/     player/ enemies/ bosses/ rooms/ items/ ui/ menus/
 scripts/    core/ player/ enemies/ bosses/ combat/ items/ levels/ ui/ dev/
 docs/       ARCHITECTURE · ADDING_CONTENT · ASSET_CREDITS

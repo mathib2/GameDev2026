@@ -113,9 +113,87 @@ and is applied once per level, capped at `SKILL_MAX`. Add a colour to
 that is the only other place that needs touching, and shops pick which two
 skills to stock at random.
 
+## Add a room layout
+
+A layout is where the cover stands and where the fight starts, drawn as ASCII.
+`data/rooms/<id>.tres` → **RoomLayoutData**. Like everything else in `data/`, it
+is found at boot — no list to register it on.
+
+The grid is **12 rows of exactly 20 characters**: the room's full tile size,
+border included. The border ring and its door gaps are drawn so you can see what
+you are doing and are ignored on parse — `Room` builds its own walls.
+
+This is `data/rooms/combat_crossfire.tres`, unedited:
+
+```
+#########..#########
+#..................#
+#..##..##..##..##..#
+#..#.e..#..#..e.#..#
+#....e........e....#
+....................     <- rows 5 and 6 are the horizontal door lane
+....................
+#....e........e....#
+#..#.e..#..#..e.#..#
+#..##..##..##..##..#
+#..................#
+#########..#########
+         ^^
+         columns 9 and 10 are the vertical one
+```
+
+| char | means |
+|---|---|
+| `.` or space | empty floor |
+| `#` | crate — breakable cover, blocks movement *and* shots |
+| `o` | optional crate: there about half the time |
+| `e` | enemy spawn anchor |
+| `E` | anchor for the big one — the room spawns a champion on it |
+| `p` | cosmetic prop, no collision |
+| `r` | reward anchor: where a pedestal or chest goes |
+
+Then tag where it may appear:
+
+```gdscript
+kinds = PackedStringArray("combat", "elite")   # never "boss"
+min_floor = 2        # gentle layouts can retire with max_floor
+weight = 1.5         # relative pick chance against the others
+```
+
+### The two rules
+
+**Columns 9-10 and rows 5-6 are the door lanes.** Nothing solid may sit in
+them — walls are not breakable and doors are the only way out, so a blocked lane
+is a soft-locked run. **Nothing may be walled in**, either; an enemy sealed
+behind crates is a room whose doors will not open until the player works out
+they are meant to smash their way in.
+
+Both are enforced. `ContentDB` runs `RoomLayoutData.validate()` at load and
+*refuses* a layout that breaks them, with the reason in the warning log — the
+room falls back to a generated layout rather than shipping broken.
+
+### Sizing it
+
+Keep it between roughly 4 and 24 crates. Crates pay out coins, so a wall-to-wall
+room does not just play badly, it prints money. Four to eight anchors is plenty:
+the floor decides how many toys it wants, and anything past the anchor count
+fills open floor at random.
+
+### Checking it
+
+```bash
+godot --headless --genaudit --audit-runs 50
+```
+
+prints how many layouts each room kind can draw on, and stress-tests the
+procedural generator that fills the gaps.
+
+---
+
 ## Add a room type
 
-`FloorGenerator.RoomKind` plus a case in `Room.populate()`. Existing kinds:
+`FloorGenerator.RoomKind` plus a case in `Room.populate()`, and a name in
+`FloorGenerator.KIND_NAMES` so layouts can tag themselves for it. Existing kinds:
 `START · COMBAT · TREASURE · SHOP · ELITE · SECRET · BOSS`.
 
 Rooms build themselves from a `RoomInfo` — floors, walls, doors and decor are
