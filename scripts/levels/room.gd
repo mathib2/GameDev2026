@@ -52,12 +52,18 @@ const WALL_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/environment/tiles_wall_unknown.png"),
 ]
 const DOOR_TEX := preload("res://assets/environment/tiles_door.png")
+const PIT_TEX := preload("res://assets/environment/tiles_pit.png")
 const CRATE_TEX := preload("res://assets/environment/prop_crate.png")
 const SFX_DOOR_SLAM := preload("res://assets/audio/sfx/block_thud.wav")
 
 var info                       ## FloorGenerator.RoomInfo
 var alive_enemies: int = 0
 var _doors: Array = []
+var _walls_body: StaticBody2D = null
+## Pit tiles, keyed Vector2i -> true, plus where the player last stood on
+## real floor — that is where a fall puts them back.
+var _pits: Dictionary = {}
+var _player_safe_pos: Vector2 = Vector2.ZERO
 var _rng := RandomNumberGenerator.new()
 ## Separate stream for the layout. _paint_floor() draws 240 tiles off _rng, so
 ## anything that ever changes how many rolls the visuals take would reshuffle
@@ -80,9 +86,10 @@ const FLOOR_TINTS: Array[Color] = [
 ]
 
 ## How often a combat room ignores the authored library and takes a generated
-## layout instead. The library is finite; a fourteen-floor run is not, and a
-## player who has learned every room has stopped reading them.
-const PROC_CHANCE := 0.3
+## layout instead. Raised now that the generator carves whole silhouettes —
+## the generated rooms are where the wildest shapes live, and a player who
+## has learned every authored room has stopped reading them.
+const PROC_CHANCE := 0.4
 
 signal cleared()
 
@@ -154,6 +161,7 @@ func _build_walls() -> void:
 	body.collision_mask = 0
 	body.add_to_group("wall")
 	add_child(body)
+	_walls_body = body
 
 	var gap := 2                          # door opening, in tiles
 	var mid_x := COLS / 2
@@ -272,6 +280,8 @@ func _physics_process(_delta: float) -> void:
 	# reaches a door during the brief post-travel lock, the entered event
 	# fires once, gets refused, and never fires again while they stand in
 	# the trigger — a dead door and a soft-locked run. Polling can't miss.
+	if not _pits.is_empty():
+		_check_pit_fall()
 	for d in _doors:
 		var area: Area2D = d["area"]
 		if not area.monitoring:
@@ -287,6 +297,13 @@ func _scatter_decor() -> void:
 		return
 	for t in _layout.obstacles:
 		_spawn_crate(tile_center(t))
+	# Interior walls reshape the rectangle: same tileset, same collider body,
+	# same "wall" group as the perimeter, so nothing anywhere can tell the
+	# difference between the room's edge and the room's shape.
+	for t in _layout.walls:
+		_wall_tile(_walls_body, t.x, t.y)
+	if not _layout.pits.is_empty():
+		_build_pits()
 	# A layout that places its own clutter has an opinion about where it goes;
 	# one that does not gets the old wall-hugging scatter.
 	if _layout.props.is_empty():
@@ -294,6 +311,65 @@ func _scatter_decor() -> void:
 	else:
 		for t in _layout.props:
 			_place_prop(tile_center(t))
+
+
+## Where the floor is missing. Toys are fenced out by a body on the pit-edge
+## layer (16) that only they collide with; shots fly straight over; the player
+## walks in and falls — unless mid-dodge, so a roll clears a chasm.
+func _build_pits() -> void:
+	var edges := StaticBody2D.new()
+	edges.name = "PitEdges"
+	edges.collision_layer = 16
+	edges.collision_mask = 0
+	add_child(edges)
+	for t in _layout.pits:
+		_pits[t] = true
+		var s := Sprite2D.new()
+		s.texture = PIT_TEX
+		s.centered = false
+		s.position = Vector2(t.x * TILE, t.y * TILE)
+		s.scale = Vector2(TILE / 16.0, TILE / 16.0)
+		s.modulate = _tint
+		s.z_index = -16
+		add_child(s)
+		var col := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(TILE, TILE)
+		col.shape = rect
+		col.position = tile_center(t)
+		edges.add_child(col)
+
+
+## Polled from _physics_process, like the doors. Falling needs the player's
+## CENTRE well inside the hole — brushing an edge is not falling, and the
+## forgiveness is what makes rolling a gap feel fair.
+func _check_pit_fall() -> void:
+	var p := get_tree().get_first_node_in_group("player") as Node2D
+	if p == null or not is_instance_valid(p):
+		return
+	var pos := to_local(p.global_position)
+	var t := Vector2i(int(pos.x / TILE), int(pos.y / TILE))
+	if not _pits.has(t):
+		_player_safe_pos = p.global_position
+		return
+	# mid-dodge clears the gap
+	var roll = p.get("_dodge_timer")
+	if roll != null and float(roll) > 0.0:
+		return
+	var fx := pos.x - float(t.x * TILE)
+	var fy := pos.y - float(t.y * TILE)
+	if fx < 10.0 or fx > TILE - 10.0 or fy < 10.0 or fy > TILE - 10.0:
+		return
+	# down they go: a hit, a sound, and back to the last real floor
+	AudioManager.play_sfx(preload("res://assets/audio/sfx/floor_descend.wav"), 0.1, -6.0)
+	Effects.spawn_pop(self, p.global_position, 1.4)
+	if p.has_method("take_damage"):
+		p.take_damage(1, p.global_position + Vector2(0, 4))
+	if _player_safe_pos != Vector2.ZERO:
+		p.global_position = _player_safe_pos
+	else:
+		p.global_position = to_global(entry_point(""))
+	p.set(&"velocity", Vector2.ZERO)
 
 
 ## Tile coords to the middle of that tile, in room pixels.
@@ -498,7 +574,8 @@ func _player_position() -> Vector2:
 func _tile_blocked(pos: Vector2) -> bool:
 	if _layout == null:
 		return false
-	return _layout.obstacles.has(Vector2i(int(pos.x / TILE), int(pos.y / TILE)))
+	var t := Vector2i(int(pos.x / TILE), int(pos.y / TILE))
+	return _layout.obstacles.has(t) or _layout.walls.has(t) or _layout.pits.has(t)
 
 
 ## One boss per floor, in a fixed order.
@@ -533,9 +610,30 @@ func _spawn_boss(floor_index: int) -> void:
 ## plinth bolted to the middle regardless of what is drawn around it.
 func _reward_point(fallback: Vector2 = Vector2(W * 0.5, H * 0.5)) -> Vector2:
 	if _layout == null or _layout.reward_spots.is_empty():
-		return fallback
+		return _free_spot(fallback)
 	return tile_center(_layout.reward_spots[_rng.randi_range(0,
 		_layout.reward_spots.size() - 1)])
+
+
+## The nearest tile a reward can actually stand on. Fixed offsets like "60px
+## right of centre" predate shaped rooms — now that a crate, a wall or a pit
+## can occupy that exact tile, a spiral search walks outward until it finds
+## real floor rather than burying a pedestal or drowning a chest.
+func _free_spot(pos: Vector2) -> Vector2:
+	if not _tile_blocked(pos):
+		return pos
+	var t := Vector2i(int(pos.x / TILE), int(pos.y / TILE))
+	for radius in range(1, 5):
+		for dy in range(-radius, radius + 1):
+			for dx in range(-radius, radius + 1):
+				if maxi(absi(dx), absi(dy)) != radius:
+					continue
+				var n := Vector2i(t.x + dx, t.y + dy)
+				if n.x < 2 or n.x > COLS - 3 or n.y < 2 or n.y > ROWS - 3:
+					continue
+				if not _tile_blocked(tile_center(n)):
+					return tile_center(n)
+	return pos
 
 
 func _spawn_pedestal(pos: Vector2 = Vector2(W * 0.5, H * 0.5)) -> void:
@@ -652,6 +750,13 @@ func spawn_pickup(kind: String, pos: Vector2) -> void:
 
 # ── clearing ──────────────────────────────────────────────────────────────
 func _on_enemy_died() -> void:
+	# Boss rooms only clear through boss_defeated. Every boss summons minions,
+	# each of which fires enemy_died on death — and alive_enemies here is 1
+	# (the boss), so the FIRST minion to die used to zero it, open the doors
+	# mid-fight, and mark the room cleared, which made the real boss kill skip
+	# its payout entirely.
+	if info != null and info.kind == FloorGenerator.RoomKind.BOSS:
+		return
 	alive_enemies = maxi(0, alive_enemies - 1)
 	if alive_enemies == 0:
 		mark_cleared()
@@ -669,13 +774,13 @@ func mark_cleared() -> void:
 	# a cleared elite room owes you something — off-lane so the solid
 	# plinth never blocks the path between doors
 	if info.kind == FloorGenerator.RoomKind.ELITE:
-		_spawn_pedestal(Vector2(W * 0.5 + 60, H * 0.5 - 50))
+		_spawn_pedestal(_free_spot(Vector2(W * 0.5 + 60, H * 0.5 - 50)))
 	elif info.kind == FloorGenerator.RoomKind.BOSS:
 		_boss_payout()
 	elif info.kind == FloorGenerator.RoomKind.COMBAT and _rng.randf() < 0.12:
 		# an ordinary fight occasionally leaves a chest behind, so clearing a
 		# room you did not have to clear is sometimes worth it
-		_spawn_chest(Vector2(W * 0.5, H * 0.5 - 46))
+		_spawn_chest(_free_spot(Vector2(W * 0.5, H * 0.5 - 46)))
 
 
 func _boss_payout() -> void:

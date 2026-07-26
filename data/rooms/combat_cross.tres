@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RoomLayoutData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_layout_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"combat_cross"
+display_name = "The Cross"
+grid = PackedStringArray("#########..#########", "#WWW............WWW#", "#WW..............WW#", "#W....e......e....W#", "#..................#", "....................", "....................", "#..................#", "#W....e......e....W#", "#WW..............WW#", "#WWW............WWW#", "#########..#########")
+kinds = PackedStringArray("combat", "elite")
+min_floor = 1

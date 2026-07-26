@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RoomLayoutData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_layout_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"combat_shore"
+display_name = "The Shore"
+grid = PackedStringArray("#########..#########", "#PPPP..........PPPP#", "#PPP............PPP#", "#PP...e......e...PP#", "#P................P#", "....................", "....................", "#P................P#", "#PP...e......e...PP#", "#PPP............PPP#", "#PPPP..........PPPP#", "#########..#########")
+kinds = PackedStringArray("combat", "elite")
+min_floor = 2

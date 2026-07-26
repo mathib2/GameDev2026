@@ -153,6 +153,8 @@ This is `data/rooms/combat_crossfire.tres`, unedited:
 | `.` or space | empty floor |
 | `#` | crate — breakable cover, blocks movement *and* shots |
 | `o` | optional crate: there about half the time |
+| `W` | interior wall — unbreakable, reshapes the room (an L-room is a box with `W` where the missing part would be) |
+| `P` | pit — the floor is missing: shots fly over, toys are fenced out, the player falls in for a heart unless mid-dodge |
 | `e` | enemy spawn anchor |
 | `E` | anchor for the big one — the room spawns a champion on it |
 | `p` | cosmetic prop, no collision |
@@ -169,10 +171,10 @@ weight = 1.5         # relative pick chance against the others
 ### The two rules
 
 **Columns 9-10 and rows 5-6 are the door lanes.** Nothing solid may sit in
-them — walls are not breakable and doors are the only way out, so a blocked lane
-is a soft-locked run. **Nothing may be walled in**, either; an enemy sealed
-behind crates is a room whose doors will not open until the player works out
-they are meant to smash their way in.
+them — `#`, `W` and `P` are all refused there, because doors are the only way
+out and a blocked lane is a soft-locked run. **Nothing may be walled in**,
+either: anchors must be reachable on foot past every crate, wall and pit — a
+fists-only player cannot clear an enemy on an island.
 
 Both are enforced. `ContentDB` runs `RoomLayoutData.validate()` at load and
 *refuses* a layout that breaks them, with the reason in the warning log — the

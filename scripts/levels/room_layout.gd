@@ -44,6 +44,14 @@ const MAX_Y := ROWS - 2
 
 var id: StringName = &"procedural"
 var obstacles: Array[Vector2i] = []
+## Interior wall blocks: unbreakable, drawn with the wall tileset. These are
+## what reshape the rectangle — an L-room or a corridor is a rectangle with
+## walls where the missing part would be.
+var walls: Array[Vector2i] = []
+## Pits: the floor is simply not there. Shots fly over, toys are fenced out
+## by the pit-edge layer, and the player falls in — unless mid-dodge, which
+## is what turns a chasm into a skill check instead of a fence.
+var pits: Array[Vector2i] = []
 var props: Array[Vector2i] = []
 var enemy_spots: Array[Vector2i] = []
 var big_spots: Array[Vector2i] = []
@@ -73,6 +81,8 @@ static func from_data(data, rng: RandomNumberGenerator) -> RoomLayout:
 				"o":
 					if rng.randf() < 0.5:
 						out.obstacles.append(t)
+				"W": out.walls.append(t)
+				"P": out.pits.append(t)
 				"e": out.enemy_spots.append(t)
 				"E": out.big_spots.append(t)
 				"p": out.props.append(t)
@@ -92,28 +102,146 @@ const QH := 4      ## quadrant height — interior rows 1-4 and 10-7
 const MOTIFS := ["box", "bar_h", "bar_v", "ell", "comb", "diag", "pillars", "blob", "wedge"]
 
 
+## The silhouettes a generated room can take, weighted toward the plain box
+## early and away from it with depth. This is the Gungeon/Isaac trick: the
+## ROOM is a shape first and furniture second — an L-room, a letterbox
+## corridor, a vaulted chamber, an island ringed by nothing. Every shape is
+## carved out of the rectangle with walls or pits, and every carve skips the
+## door lanes, so any silhouette is connected by construction.
+const SILHOUETTES := ["l_cut", "twin_cut", "cross_cut", "corridor_h",
+	"corridor_v", "vault", "moat", "shore"]
+
+
 static func procedural(rng: RandomNumberGenerator, floor_index: int) -> RoomLayout:
 	var out := RoomLayout.new()
 	out.id = &"procedural"
 
+	# ── 1. the shape of the room itself ──
+	var walls := {}
+	var pits := {}
+	var shaped_chance := 0.35 if floor_index == 0 else 0.65
+	var silhouette := ""
+	if rng.randf() < shaped_chance:
+		silhouette = SILHOUETTES[rng.randi_range(0, SILHOUETTES.size() - 1)]
+		_carve(silhouette, walls, pits, rng, floor_index)
+
+	# ── 2. crates, in whatever floor is left ──
 	var top := _quadrant(rng, floor_index)
 	# Half the time the bottom repeats the top (four-fold symmetry, calm and
 	# arena-like); otherwise it gets its own motif and the room has a near half
 	# and a far half, which is more interesting to fight across.
 	var bottom: Array = top if rng.randf() < 0.5 else _quadrant(rng, floor_index)
-
 	var solid := {}
 	for q in top:
 		_stamp(solid, q.x, q.y, true)
 	for q in bottom:
 		_stamp(solid, q.x, q.y, false)
+
+	# A plain box can still grow one mirrored feature motif, as before. Shaped
+	# rooms skip it — the silhouette IS their feature, and stacking both walls
+	# the fight in.
+	if silhouette == "" and floor_index >= 1 and rng.randf() < 0.45:
+		var feature_is_pit: bool = floor_index >= 2 and rng.randf() < 0.5
+		for c in _motif(["bar_h", "bar_v", "box", "ell"][rng.randi_range(0, 3)], rng):
+			if c.x >= 0 and c.x < QW and c.y >= 0 and c.y < QH:
+				_stamp(pits if feature_is_pit else walls, c.x, c.y, true)
+				_stamp(pits if feature_is_pit else walls, c.x, c.y, false)
+
+	# the shape always wins where furniture overlaps it
+	for k in walls:
+		solid.erase(k)
+	for k in pits:
+		solid.erase(k)
 	for k in solid:
 		out.obstacles.append(k)
+	for k in walls:
+		out.walls.append(k)
+	for k in pits:
+		out.pits.append(k)
 
-	out.enemy_spots = _pick_anchors(solid, rng, 4 + mini(floor_index, 4))
+	# Anchors dodge everything that blocks walking, shape included.
+	var blocked := solid.duplicate()
+	for k in walls:
+		blocked[k] = true
+	for k in pits:
+		blocked[k] = true
+	out.enemy_spots = _pick_anchors(blocked, rng, 4 + mini(floor_index, 4))
 	if not out.enemy_spots.is_empty() and rng.randf() < 0.6:
 		out.big_spots.append(out.enemy_spots.pop_back())
 	return out
+
+
+## Fill a rectangle of interior tiles into `dict`, skipping door lanes.
+static func _fill(dict: Dictionary, x0: int, x1: int, y0: int, y1: int) -> void:
+	for y in range(maxi(y0, MIN_Y), mini(y1, MAX_Y) + 1):
+		for x in range(maxi(x0, MIN_X), mini(x1, MAX_X) + 1):
+			var t := Vector2i(x, y)
+			if not is_lane(t):
+				dict[t] = true
+
+
+## Carve one silhouette. Pit-based shapes need the third floor's depth — on
+## earlier floors they fall back to their walled cousins, so the shape
+## vocabulary grows as the run descends.
+static func _carve(kind: String, walls: Dictionary, pits: Dictionary,
+		rng: RandomNumberGenerator, floor_index: int) -> void:
+	var pit_ok := floor_index >= 2
+	match kind:
+		"l_cut":
+			# one corner of the rectangle is not part of the room
+			var w := rng.randi_range(5, 8)
+			var h := rng.randi_range(3, 4)
+			var left := rng.randf() < 0.5
+			var top_side := rng.randf() < 0.5
+			_fill(walls, 1 if left else COLS - 1 - w, w if left else MAX_X,
+				1 if top_side else ROWS - 1 - h, h if top_side else MAX_Y)
+		"twin_cut":
+			# two opposite corners gone: the room is a fat Z
+			var w := rng.randi_range(5, 7)
+			var h := 3
+			var flip := rng.randf() < 0.5
+			_fill(walls, 1, w, 1 if flip else MAX_Y - h + 1,
+				h if flip else MAX_Y)
+			_fill(walls, COLS - 1 - w, MAX_X, MAX_Y - h + 1 if flip else 1,
+				MAX_Y if flip else h)
+		"cross_cut":
+			# all four corners gone: a plus-shaped arena
+			var w := rng.randi_range(4, 6)
+			var h := 3
+			_fill(walls, 1, w, 1, h)
+			_fill(walls, COLS - 1 - w, MAX_X, 1, h)
+			_fill(walls, 1, w, MAX_Y - h + 1, MAX_Y)
+			_fill(walls, COLS - 1 - w, MAX_X, MAX_Y - h + 1, MAX_Y)
+		"corridor_h":
+			# the room is a wide letterbox
+			_fill(walls, 1, MAX_X, 1, rng.randi_range(2, 3))
+			_fill(walls, 1, MAX_X, ROWS - 1 - rng.randi_range(2, 3), MAX_Y)
+		"corridor_v":
+			# the room is a tall slot; the lane rows tunnel through the sides
+			var w := rng.randi_range(3, 5)
+			_fill(walls, 1, w, 1, MAX_Y)
+			_fill(walls, COLS - 1 - w, MAX_X, 1, MAX_Y)
+		"vault":
+			# a chamber within the room, gated where the lanes cross it
+			_fill(walls, 4, 15, 2, 2)
+			_fill(walls, 4, 15, 9, 9)
+			_fill(walls, 4, 4, 3, 8)
+			_fill(walls, 15, 15, 3, 8)
+		"moat":
+			# an island arena, bridged only at the lanes
+			var band := pits if pit_ok else walls
+			_fill(band, 3, 16, 2, 2)
+			_fill(band, 3, 16, 9, 9)
+			_fill(band, 3, 4, 3, 8)
+			_fill(band, 15, 16, 3, 8)
+		"shore":
+			# the floor simply ends along one side of the room
+			var band := pits if pit_ok else walls
+			var w := rng.randi_range(3, 5)
+			if rng.randf() < 0.5:
+				_fill(band, 1, w, 1, MAX_Y)
+			else:
+				_fill(band, COLS - 1 - w, MAX_X, 1, MAX_Y)
 
 
 ## One quadrant's worth of solid cells, in local coords (0-7, 0-3).
@@ -252,13 +380,17 @@ static func check(grid: PackedStringArray) -> PackedStringArray:
 			continue
 		for x in COLS:
 			var c: String = row[x]
-			if not " .#oeEpr".contains(c):
+			if not " .#oeEprWP".contains(c):
 				errors.append("row %d col %d: unknown character '%s'" % [y, x, c])
 				continue
 			if x < MIN_X or x > MAX_X or y < MIN_Y or y > MAX_Y:
 				continue
 			var t := Vector2i(x, y)
-			if c == "#" or c == "o":
+			# Crates, walls and pits all block walking for validation purposes.
+			# Crates can at least be smashed through; a wall or a pit cannot, so
+			# an anchor sealed behind those is not "quality", it is a fists-only
+			# player staring at an unclearable room.
+			if c == "#" or c == "o" or c == "W" or c == "P":
 				if is_lane(t):
 					errors.append("solid tile in a door lane at %d,%d" % [x, y])
 				solid[t] = true

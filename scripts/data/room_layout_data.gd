@@ -29,6 +29,9 @@ extends Resource
 ## [code].[/code] or space — empty floor[br]
 ## [code]#[/code] — crate: breakable cover, blocks movement and shots[br]
 ## [code]o[/code] — optional crate, there about half the time[br]
+## [code]W[/code] — interior wall: unbreakable, reshapes the room[br]
+## [code]P[/code] — pit: shots fly over, toys are fenced out, the player
+## falls in (a dodge roll crosses safely)[br]
 ## [code]e[/code] — enemy spawn anchor[br]
 ## [code]E[/code] — anchor for the big one: the room spawns a champion on it[br]
 ## [code]p[/code] — cosmetic prop, no collision[br]

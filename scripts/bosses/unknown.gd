@@ -13,6 +13,7 @@ extends CharacterBody2D
 ## same as everything.
 
 const PROJECTILE := preload("res://scenes/enemies/EnemyProjectile.tscn")
+const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 ## What censorship is made of.
 const SHOT_STATIC := preload("res://assets/effects/fx_static.png")
 ## Pieces of wing, thrown hard enough to matter.
@@ -22,9 +23,11 @@ const TITLE := "?????"
 const SUBTITLE := "Even the Place Looks Away"
 
 ## Highest base in the roster on the deepest floor: with the shared
-## (1 + 0.35 * floor_index) multiplier this lands at more than twice Jack's
-## effective health. The last fight is meant to be the wall.
-@export var base_health: float = 380.0
+## (1 + 0.35 * floor_index) multiplier this lands at well over twice Jack's
+## effective health. The last fight is meant to be the wall — and by phase
+## three, chaos: paired censor bars, departure bursts, static pouring out of
+## every blink, and the room's own natives crawling in.
+@export var base_health: float = 420.0
 var floor_index: int = 0
 
 enum State { INTRO, IDLE, BLINK, RING, RAZORS, BAR, DEAD }
@@ -152,7 +155,7 @@ func _choose_attack() -> void:
 			state = State.RING; _timer = 0.6
 			anim.play(&"attack", true)
 		"razors":
-			state = State.RAZORS; _timer = 0.45; _step = 3
+			state = State.RAZORS; _timer = 0.45; _step = 3 + (1 if phase >= 3 else 0)
 			anim.play(&"attack", true)
 		"bar":
 			state = State.BAR; _timer = 0.7
@@ -164,6 +167,12 @@ func _start_blink() -> void:
 	state = State.BLINK
 	_timer = 0.24
 	AudioManager.play_sfx(sfx_blink, 0.1, -6.0)
+	# from phase 2, leaving a place means salting it: chasing the fade gets
+	# you a face full of static
+	if phase >= 2:
+		var base := randf() * TAU
+		for i in 6:
+			_shoot(SHOT_STATIC, Vector2.from_angle(base + TAU * i / 6.0), 90.0)
 	var t := create_tween()
 	t.tween_property(self, "modulate:a", 0.08, 0.2)
 	_blink_to = global_position
@@ -184,7 +193,7 @@ func _finish_blink() -> void:
 	Effects.spawn_pop(get_parent(), global_position, 1.6)
 	var t := create_tween()
 	t.tween_property(self, "modulate:a", 1.0, 0.16)
-	_blink_cd = 3.4 - 0.5 * float(phase)
+	_blink_cd = 2.8 - 0.55 * float(phase)
 	state = State.IDLE
 	# arriving next to the player owes them a beat before anything fires
 	_cooldown = maxf(_cooldown, 0.45)
@@ -216,14 +225,18 @@ func _razor_burst(dir: Vector2) -> void:
 func _do_bar(dir: Vector2) -> void:
 	AudioManager.play_sfx(sfx_burst, 0.0, 0.0)
 	var perp := dir.orthogonal()
-	for i in 9:
-		var off := perp * (float(i) - 4.0) * 18.0
-		var p := PROJECTILE.instantiate()
-		get_parent().add_child(p)
-		p.global_position = global_position + dir * 30.0 + off
-		p.setup(SHOT_STATIC, dir * 130.0, 1.0, false, 620.0, 0, false)
+	var rows := 2 if phase >= 3 else 1
+	for r in rows:
+		# the second bar trails the first, so the dodge has to be TWO dodges
+		var lead := dir * (30.0 - 46.0 * float(r))
+		for i in 9:
+			var off := perp * (float(i) - 4.0) * 18.0
+			var p := PROJECTILE.instantiate()
+			get_parent().add_child(p)
+			p.global_position = global_position + lead + off
+			p.setup(SHOT_STATIC, dir * 145.0, 1.0, false, 620.0, 0, false)
 	EventBus.screen_shake.emit(4.0, 0.25)
-	_end_attack(1.5)
+	_end_attack(1.4)
 
 
 func _shoot(tex: Texture2D, dir: Vector2, speed: float) -> void:
@@ -235,7 +248,7 @@ func _shoot(tex: Texture2D, dir: Vector2, speed: float) -> void:
 
 func _end_attack(cool: float) -> void:
 	state = State.IDLE
-	_cooldown = cool / (1.0 + 0.22 * float(phase - 1))
+	_cooldown = cool / (1.0 + 0.34 * float(phase - 1))
 	anim.play(&"idle", true)
 
 
@@ -254,7 +267,7 @@ func _touch_player() -> void:
 		return
 	if global_position.distance_to(player.global_position) < 40.0:
 		if player.has_method("take_damage"):
-			player.take_damage(1, global_position)
+			player.take_damage(2 if phase >= 3 else 1, global_position)
 
 
 func melee_radius() -> float:
@@ -288,7 +301,20 @@ func _advance_phase(p: int) -> void:
 	Effects.spawn_burst(get_parent(), global_position, Color(0.92, 0.92, 0.95), 26, 190.0, 4.0)
 	EventBus.toast.emit("IT IS CLOSER THAN IT WAS" if p == 2 else "STOP LOOKING",
 		Color(0.92, 0.92, 0.95))
-	_end_attack(0.5)
+	# the floor sends help. Safe now that boss rooms only clear through
+	# boss_defeated — a dead mite can no longer open the doors early.
+	var mite := ContentDB.get_enemy(&"static_mite")
+	if mite != null:
+		for i in p:
+			var e := ENEMY_SCENE.instantiate()
+			e.data = mite
+			get_parent().add_child(e)
+			var a := TAU * float(i) / float(p) + randf()
+			e.global_position = global_position + Vector2.from_angle(a) * 80.0
+			e.scale = Vector2(0.85, 0.85)
+			Effects.spawn_burst(get_parent(), e.global_position,
+				Color(0.92, 0.92, 0.95), 8, 90.0, 2.5)
+	_end_attack(0.4)
 
 
 func _die() -> void:

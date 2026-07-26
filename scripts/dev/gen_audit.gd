@@ -130,18 +130,22 @@ func _audit_layouts(rng: RandomNumberGenerator) -> void:
 	var crates := 0
 	var lane_blocked := 0
 	var no_anchors := 0
+	var shaped := 0
 	for i in trials:
 		var l := RoomLayout.procedural(rng, i % RunManager.total_floors())
 		crates += l.obstacles.size()
 		if l.enemy_spots.is_empty() and l.big_spots.is_empty():
 			no_anchors += 1
-		for t in l.obstacles:
-			if RoomLayout.is_lane(t):
-				lane_blocked += 1
-				break
-	print("[AUDIT] %d generated rooms: %.1f crates avg, %d blocked a door lane, "
-		% [trials, float(crates) / float(trials), lane_blocked]
-		+ "%d had nowhere to spawn" % no_anchors)
+		if not l.walls.is_empty() or not l.pits.is_empty():
+			shaped += 1
+		for arr in [l.obstacles, l.walls, l.pits]:
+			for t in arr:
+				if RoomLayout.is_lane(t):
+					lane_blocked += 1
+					break
+	print("[AUDIT] %d generated rooms: %.1f crates avg, %d with walls or pits, "
+		% [trials, float(crates) / float(trials), shaped]
+		+ "%d blocked a door lane, %d had nowhere to spawn" % [lane_blocked, no_anchors])
 	if lane_blocked > 0 or no_anchors > 0:
 		printerr("[AUDIT] FAIL: the room generator produced an unplayable room")
 

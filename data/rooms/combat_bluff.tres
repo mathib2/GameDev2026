@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RoomLayoutData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/room_layout_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"combat_bluff"
+display_name = "The Bluff"
+grid = PackedStringArray("#########..#########", "#PPPPP.............#", "#PPPP..............#", "#PPP..e............#", "#PP............e...#", "....................", "....................", "#................PP#", "#....e..........PPP#", "#...........e..PPPP#", "#.............PPPPP#", "#########..#########")
+kinds = PackedStringArray("combat", "elite")
+min_floor = 3

@@ -167,7 +167,11 @@ func _shoot(w: WeaponData) -> void:
 	# one flash for the whole volley, aimed down the middle of the spread
 	Effects.spawn_muzzle(get_parent(), global_position + aim * 13.0, aim,
 		Color(1, 0.94, 0.72), 1.0 + w.shake * 0.06)
-	EventBus.screen_shake.emit(w.shake * 0.5, 0.1)
+	# A fraction of the melee shake, not half: this fires on EVERY shot, and at
+	# automatic fire rates half-strength shake compounds into a constant rumble
+	# that reads as the screen being broken. The per-weapon contrast survives —
+	# a shotgun still kicks visibly harder than a water pistol.
+	EventBus.screen_shake.emit(w.shake * 0.22, 0.08)
 
 
 func _handle_dodge() -> void:

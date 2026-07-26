@@ -29,6 +29,11 @@ var _telegraph: Line2D = null
 var _flank: float = 0.0
 ## Champion variants (set by the room): tinted, tougher, always pay out.
 var champion: bool = false
+## Anti-corner bookkeeping: where we were last frame, how long we have been
+## pushing without getting anywhere, and how long to beeline once unstuck.
+var _last_pos: Vector2 = Vector2.ZERO
+var _stuck_time: float = 0.0
+var _unstick: float = 0.0
 
 @onready var anim: SheetAnimator = $SheetAnimator
 
@@ -39,7 +44,10 @@ var sfx_die: AudioStream = preload("res://assets/audio/sfx/enemy_death.wav")
 func _ready() -> void:
 	add_to_group("enemy")
 	collision_layer = 4
-	collision_mask = 1
+	# 16 is the pit-edge layer: pits stop toys the way walls do, so a room
+	# with a chasm in it cannot quietly delete its own fight. Only the player
+	# can fall.
+	collision_mask = 1 | 16
 	_home = global_position
 	_cooldown = randf() * 1.5
 	_idle_noise = randf_range(3.0, 9.0)
@@ -101,8 +109,29 @@ func _physics_process(delta: float) -> void:
 	_knockback = _knockback.move_toward(Vector2.ZERO, 1400.0 * delta)
 	move_and_slide()
 	_clamp_to_room()
+	_detect_stuck(delta)
 	_touch_player()
 	_update_anim()
+
+
+## The corner detector. A toy that wants to move but has not actually moved
+## for half a second is wedged — usually ground into a corner or a crate
+## cluster by its own flanking arc. The cure is a short window of walking
+## straight at the player, which slides it out along whatever it is pressed
+## against. Without this, chasers could park in a corner for a whole fight.
+func _detect_stuck(delta: float) -> void:
+	if _unstick > 0.0:
+		_unstick -= delta
+	var wants := velocity.length() > 20.0
+	var moved := global_position.distance_to(_last_pos) > 1.2
+	_last_pos = global_position
+	if wants and not moved and not _holds_position():
+		_stuck_time += delta
+		if _stuck_time > 0.5:
+			_stuck_time = 0.0
+			_unstick = 0.5
+	else:
+		_stuck_time = 0.0
 
 
 const SEPARATION_RADIUS := 34.0
@@ -165,7 +194,14 @@ func _think(delta: float) -> void:
 			# per enemy and unwinds as it closes, so a pack approaches from a
 			# spread of angles and converges only at the end — you cannot back
 			# up and hold them all off with one arc of swings.
+			#
+			# The arc turns off against walls and while unsticking: a flanking
+			# vector held against a wall slides the toy INTO the nearest corner
+			# and pins it there, which read as "the teddies just stand in the
+			# corner". Straight-at-the-player always slides back out.
 			var bias: float = _flank * clampf(dist / 220.0, 0.0, 1.0)
+			if is_on_wall() or _unstick > 0.0:
+				bias = 0.0
 			velocity = dir.rotated(bias) * spd
 
 		EnemyData.Behaviour.SPRINTER:

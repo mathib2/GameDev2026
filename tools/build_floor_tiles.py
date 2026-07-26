@@ -356,6 +356,27 @@ def unknown_wall_tile(variant, rng):
     return img
 
 
+def pit_tile(rng):
+    """The floor, missing. Neutral greys so the per-floor tint owns the mood.
+    Depth is sold entirely by the top lip: the near wall of the hole catches
+    light, the rest falls to black."""
+    img = Image.new("RGBA", (T, T), (10, 10, 12, 255))
+    d = ImageDraw.Draw(img, "RGBA")
+    # the lit near wall, fading down into nothing
+    for y, c in ((0, (96, 90, 84)), (1, (64, 60, 56)), (2, (38, 36, 34)),
+                 (3, (22, 21, 20))):
+        d.line([0, y, T - 1, y], fill=c)
+    for x in (0, T - 1):
+        d.line([x, 0, x, 5], fill=(48, 45, 42))
+        d.line([x, 6, x, T - 1], fill=(16, 16, 18))
+    # a couple of ledges catching stray light on the way down
+    for _ in range(3):
+        x0 = rng.randrange(2, T - 6)
+        y = rng.randrange(6, T - 2)
+        d.line([x0, y, x0 + rng.randrange(2, 4), y], fill=(26, 25, 26))
+    return img
+
+
 FLOORS = (
     ("tiles_floor_playground", playground_tile),
     ("tiles_floor_gym", gym_tile),
@@ -383,6 +404,10 @@ def main():
         sheet.alpha_composite(unknown_wall_tile(i, rng), (i * T, 0))
     sheet.save(os.path.join(out, "tiles_wall_unknown.png"))
     print(f"assets/environment/tiles_wall_unknown.png  ({T * 2}x{T}, 2 frames)")
+
+    sheet = pit_tile(rng)
+    sheet.save(os.path.join(out, "tiles_pit.png"))
+    print(f"assets/environment/tiles_pit.png  ({T}x{T}, 1 frame)")
 
 
 if __name__ == "__main__":
