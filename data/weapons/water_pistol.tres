@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/data/weapon_data.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://assets/items/wpn_water_pistol.png" id="2_icon"]
-[ext_resource type="AudioStream" path="res://assets/audio/sfx/duck_squeak.wav" id="3_use"]
+[ext_resource type="AudioStream" path="res://assets/audio/sfx/water_plip.wav" id="3_use"]
 [ext_resource type="AudioStream" path="res://assets/audio/sfx/block_thud.wav" id="4_hit"]
 [ext_resource type="Texture2D" path="res://assets/effects/fx_pellet.png" id="5_proj"]
 

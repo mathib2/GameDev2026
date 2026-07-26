@@ -568,33 +568,52 @@ def un_params(row, col):
                 bar_gone=0.0 if col < 4 else 1.0)
 
 
-def fx_steam():
-    img = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+# Every enemy shot wears red now. The Gym's floor is brown, its dumbbells were
+# steel, and the two vanished into each other — so every hostile projectile
+# carries the same red halo, one colour that means "this hurts" on every
+# surface in the game, and the icon inside keeps the identity.
+def _haloed(size, draw_inner):
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    for x, y, r, a in ((3, 6, 3, 235), (6, 4, 3, 235), (5, 7, 2, 235), (7, 7, 2, 160)):
-        d.ellipse([x - r, y - r, x + r, y + r], fill=(*STEAM, a))
-    d.ellipse([3, 3, 7, 7], fill=(246, 252, 252, 255))
+    d.ellipse([0, 0, size - 1, size - 1], fill=(*GLOW_R_DIM, 70))
+    d.ellipse([1, 1, size - 2, size - 2], fill=(*GLOW_R, 110))
+    draw_inner(d)
     return img
+
+
+def fx_steam():
+    def inner(d):
+        for x, y, r, a in ((4, 7, 3, 245), (7, 5, 3, 245), (6, 8, 2, 245)):
+            d.ellipse([x - r, y - r, x + r, y + r], fill=(*STEAM, a))
+        d.ellipse([4, 4, 8, 8], fill=(246, 252, 252, 255))
+    return _haloed(12, inner)
 
 
 def fx_glove():
-    img = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.ellipse([1, 1, 8, 8], fill=RED, outline=GLOVE_DK)
-    d.ellipse([5, 5, 9, 9], fill=RED, outline=GLOVE_DK)
-    d.ellipse([2, 2, 5, 5], fill=GLOVE_LT)
-    d.rectangle([1, 7, 4, 9], fill=TOOTH)
-    return img
+    def inner(d):
+        d.ellipse([2, 2, 9, 9], fill=RED, outline=GLOVE_DK)
+        d.ellipse([6, 6, 10, 10], fill=RED, outline=GLOVE_DK)
+        d.ellipse([3, 3, 6, 6], fill=GLOVE_LT)
+        d.rectangle([2, 8, 5, 10], fill=TOOTH)
+    return _haloed(12, inner)
 
 
 def fx_dumbbell():
-    img = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.line([2, 5, 8, 5], fill=STEEL, width=2)
-    for px in (1, 8):
-        d.rectangle([px, 2, px + 1, 8], fill=STEEL_DK)
-        d.point((px, 2), fill=STEEL)
-    return img
+    def inner(d):
+        d.line([3, 6, 9, 6], fill=STEEL, width=2)
+        for px in (2, 9):
+            d.rectangle([px, 3, px + 1, 9], fill=STEEL_DK)
+            d.point((px, 3), fill=STEEL)
+    return _haloed(12, inner)
+
+
+def fx_enemy_shot():
+    """The default enemy bullet, fired by every ordinary toy: a red ember.
+    Replaces the old brown-pink dot that disappeared into the Gym floor."""
+    def inner(d):
+        d.ellipse([2, 2, 9, 9], fill=(120, 16, 20, 255), outline=GLOW_R)
+        d.ellipse([4, 4, 7, 7], fill=(255, 150, 120, 255))
+    return _haloed(12, inner)
 
 
 GLOW_R = (255, 70, 58)
@@ -643,7 +662,7 @@ def main():
     os.makedirs(fxout, exist_ok=True)
     for name, fn in (("fx_steam", fx_steam), ("fx_glove", fx_glove),
                      ("fx_dumbbell", fx_dumbbell), ("fx_static", fx_static),
-                     ("fx_feather", fx_feather)):
+                     ("fx_feather", fx_feather), ("fx_enemy_shot", fx_enemy_shot)):
         im = fn()
         im.save(os.path.join(fxout, f"{name}.png"))
         print(f"assets/effects/{name}.png  {im.size[0]}x{im.size[1]}")

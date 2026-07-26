@@ -693,7 +693,8 @@ func _spawn_shop() -> void:
 	var ids: Array = GameState.SKILLS.keys()
 	ids.shuffle()
 	for i in mini(2, ids.size()):
-		_spawn_shrine(Vector2(W * 0.5 + (-96.0 if i == 0 else 96.0), H * 0.5 - 30),
+		# high row, clear of the chest and the priced pedestals below
+		_spawn_shrine(Vector2(W * 0.5 + (-96.0 if i == 0 else 96.0), H * 0.5 - 64),
 			ids[i])
 
 	_spawn_chest(Vector2(W * 0.5, H * 0.5 - 52), true,

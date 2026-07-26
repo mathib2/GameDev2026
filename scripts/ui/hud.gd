@@ -71,7 +71,11 @@ func _ready() -> void:
 	EventBus.run_started.connect(func():
 		_rebuild_hearts()
 		_coins.text = "0 ¢"
-		# belt and braces: a fresh run always starts with a clean HUD
+		# belt and braces: a fresh run always starts with a clean HUD —
+		# including the item strip, whose icons used to survive death and
+		# show the previous run's items forever
+		for c in _items.get_children():
+			c.queue_free()
 		_boss_bar.visible = false
 		_intro.visible = false)
 
@@ -125,7 +129,7 @@ func _on_toast(text: String, colour: Color) -> void:
 	_toast.modulate = colour
 	_toast.visible = true
 	_toast.modulate.a = 1.0
-	_toast_time = 2.6
+	_toast_time = 4.1
 
 
 func _on_flash(colour: Color, _duration: float) -> void:

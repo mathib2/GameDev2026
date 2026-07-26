@@ -118,7 +118,7 @@ func _on_floor_entered(index: int, fallback: String) -> void:
 		_skip_next_floor = false
 		return
 	if index < FLOORS.size():
-		_show(FLOORS[index][0], FLOORS[index][1], 3.2)
+		_show(FLOORS[index][0], FLOORS[index][1], 4.7)
 	else:
 		# deeper than the written floors: name it, say nothing about it
 		_show(fallback, "", 2.4)
