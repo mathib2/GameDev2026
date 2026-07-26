@@ -26,6 +26,10 @@ T = 16
 FLOOR_FRAMES = 5
 WALL_FRAMES = 2
 
+# Door: one 32x16 frame per state, closed shutter then open frame.
+DOOR_W = 32
+DOOR_FRAMES = 2
+
 # Dark stained nursery boards.
 BOARD = (58, 44, 35)
 BOARD_DK = (43, 32, 26)
@@ -129,6 +133,47 @@ def wall_tile(variant, rng):
     return img
 
 
+# Neutral steel, so the per-floor room tint does the theming.
+DOOR = (74, 76, 84)
+DOOR_DK = (48, 50, 58)
+DOOR_LT = (104, 106, 116)
+DOOR_EDGE = (30, 31, 37)
+
+
+def door_closed():
+    """A rolled-down steel shutter filling the whole doorway."""
+    img = Image.new("RGBA", (DOOR_W, T), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, DOOR_W - 1, T - 1], fill=(*DOOR, 255))
+    # slats: a highlight on top of each, a shadow groove beneath
+    for y in range(2, T - 2, 3):
+        d.line([2, y, DOOR_W - 3, y], fill=DOOR_LT)
+        d.line([2, y + 1, DOOR_W - 3, y + 1], fill=DOOR_DK)
+    # side rails the shutter runs in
+    for x0 in (0, DOOR_W - 2):
+        d.rectangle([x0, 0, x0 + 1, T - 1], fill=DOOR_DK)
+        d.line([x0, 0, x0, T - 1], fill=DOOR_EDGE)
+    # bottom bar, with a lifting handle nobody is strong enough to use
+    d.rectangle([1, T - 3, DOOR_W - 2, T - 1], fill=DOOR_DK)
+    d.rectangle([DOOR_W // 2 - 3, T - 2, DOOR_W // 2 + 2, T - 2], fill=DOOR_LT)
+    d.line([0, 0, DOOR_W - 1, 0], fill=DOOR_EDGE)
+    return img
+
+
+def door_open():
+    """Just the frame: posts, lintel and a worn threshold. The middle stays
+    transparent so whatever lies beyond the room shows through."""
+    img = Image.new("RGBA", (DOOR_W, T), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    for x0 in (0, DOOR_W - 3):
+        d.rectangle([x0, 0, x0 + 2, T - 1], fill=(*DOOR_DK, 255))
+        d.line([x0 + (2 if x0 == 0 else 0), 1, x0 + (2 if x0 == 0 else 0), T - 1],
+               fill=DOOR_LT)
+    d.rectangle([0, 0, DOOR_W - 1, 1], fill=(*DOOR_EDGE, 255))
+    d.line([3, T - 1, DOOR_W - 4, T - 1], fill=(*DOOR_DK, 255))
+    return img
+
+
 def main():
     root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
     out = os.path.join(root, "assets", "environment")
@@ -148,6 +193,13 @@ def main():
     sheet.save(os.path.join(out, "tiles_wall.png"))
     print(f"assets/environment/tiles_wall.png  ({T * WALL_FRAMES}x{T}, "
           f"{WALL_FRAMES} frames)")
+
+    sheet = Image.new("RGBA", (DOOR_W * DOOR_FRAMES, T), (0, 0, 0, 0))
+    sheet.alpha_composite(door_closed(), (0, 0))
+    sheet.alpha_composite(door_open(), (DOOR_W, 0))
+    sheet.save(os.path.join(out, "tiles_door.png"))
+    print(f"assets/environment/tiles_door.png  ({DOOR_W * DOOR_FRAMES}x{T}, "
+          f"{DOOR_FRAMES} frames)")
 
 
 if __name__ == "__main__":

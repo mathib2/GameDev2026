@@ -41,7 +41,9 @@ const FLOOR_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/environment/tiles_floor_arena.png"),
 ]
 const WALL_TEX := preload("res://assets/environment/tiles_wall.png")
+const DOOR_TEX := preload("res://assets/environment/tiles_door.png")
 const CRATE_TEX := preload("res://assets/environment/prop_crate.png")
+const SFX_DOOR_SLAM := preload("res://assets/audio/sfx/block_thud.wav")
 
 var info                       ## FloorGenerator.RoomInfo
 var alive_enemies: int = 0
@@ -186,6 +188,11 @@ func _wall_tile(body: StaticBody2D, tx: int, ty: int) -> void:
 	body.add_child(col)
 
 
+## A doorway is three things: the travel trigger, a visible door, and a
+## physical barrier. Before the barrier existed, "closed" only meant the
+## trigger was deaf — the doorway stayed a literal hole in the wall, with
+## nothing telling the player the room was locked and nothing stopping them
+## walking through the gap and out of the map mid-fight.
 func _make_door(dir: String) -> void:
 	var area := Area2D.new()
 	area.name = "Door_" + dir
@@ -203,7 +210,49 @@ func _make_door(dir: String) -> void:
 		"l": area.position = Vector2(8, H * 0.5)
 		"r": area.position = Vector2(W - 8, H * 0.5)
 	add_child(area)
-	_doors.append({"dir": dir, "area": area})
+
+	# The door itself: sprite + solid body, rotated into the wall. Drawn with
+	# its outward edge at local "up", so each direction is one rotation.
+	var holder := Node2D.new()
+	holder.name = "DoorBody_" + dir
+	match dir:
+		"u":
+			holder.position = Vector2(W * 0.5, TILE * 0.5)
+		"d":
+			holder.position = Vector2(W * 0.5, H - TILE * 0.5)
+			holder.rotation = PI
+		"l":
+			holder.position = Vector2(TILE * 0.5, H * 0.5)
+			holder.rotation = -PI * 0.5
+		"r":
+			holder.position = Vector2(W - TILE * 0.5, H * 0.5)
+			holder.rotation = PI * 0.5
+	add_child(holder)
+
+	var s := Sprite2D.new()
+	s.texture = DOOR_TEX
+	s.hframes = 2
+	s.frame = 1                        # open until populate() decides otherwise
+	s.scale = Vector2(TILE / 16.0, TILE / 16.0)
+	s.modulate = _tint
+	s.z_index = -9                     # over the wall course, under everything alive
+	holder.add_child(s)
+
+	# Same contract as the walls: layer 1 and the "wall" group, so the player,
+	# the toys and both kinds of projectile all treat a shut door as wall.
+	var body := StaticBody2D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.add_to_group("wall")
+	var bcol := CollisionShape2D.new()
+	var brect := RectangleShape2D.new()
+	brect.size = Vector2(TILE * 2.0, TILE)
+	bcol.shape = brect
+	bcol.disabled = true               # matches the open sprite above
+	body.add_child(bcol)
+	holder.add_child(body)
+
+	_doors.append({"dir": dir, "area": area, "sprite": s, "shape": bcol})
 
 
 func _physics_process(_delta: float) -> void:
@@ -634,13 +683,24 @@ func _boss_payout() -> void:
 func _open_doors() -> void:
 	for d in _doors:
 		d["area"].set_deferred("monitoring", true)
+		d["shape"].set_deferred("disabled", true)
+		d["sprite"].frame = 1
 	if info != null and not info.cleared:
 		info.cleared = true
 
 
 func _close_doors() -> void:
+	var slammed := false
 	for d in _doors:
 		d["area"].set_deferred("monitoring", false)
+		if d["shape"].disabled:
+			slammed = true
+		d["shape"].set_deferred("disabled", false)
+		d["sprite"].frame = 0
+	# One thud for the set, not four: the sound is the message "you are locked
+	# in until everything is dead" — the reason the doors exist at all.
+	if slammed:
+		AudioManager.play_sfx(SFX_DOOR_SLAM, 0.0, -4.0)
 
 
 func room_rect() -> Rect2:

@@ -53,3 +53,6 @@ EnterTheStrongest-Windows/
 *.key
 *.keystore
 *.p12
+
+# Windows download markers that ride along when files are copied into WSL
+*Zone.Identifier
