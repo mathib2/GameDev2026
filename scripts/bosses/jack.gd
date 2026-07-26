@@ -19,7 +19,7 @@ const ENEMY_SCENE := preload("res://scenes/enemies/Enemy.tscn")
 @export var base_health: float = 280.0
 var floor_index: int = 0
 
-enum State { INTRO, IDLE, CRANK, LUNGE, SPIRAL, POP, DEAD }
+enum State { INTRO, IDLE, CRANK, LUNGE, SPIRAL, POP, COMBO, DEAD }
 
 var state: State = State.INTRO
 var phase: int = 1
@@ -35,6 +35,7 @@ var _lunges_left: int = 0
 var _spiral_angle: float = 0.0
 var _spiral_shots: int = 0
 var _spiral_step: float = 0.0
+var _combo_left: int = 0
 
 @onready var anim: SheetAnimator = $SheetAnimator
 
@@ -155,6 +156,11 @@ func _act(delta: float) -> void:
 			if _timer <= 0.0:
 				_do_pop()
 
+		State.COMBO:
+			velocity = velocity.move_toward(Vector2.ZERO, 600.0 * delta)
+			if _timer <= 0.0:
+				_combo_punch()
+
 
 func _choose_attack() -> void:
 	var options := ["lunge", "spiral"]
@@ -162,7 +168,9 @@ func _choose_attack() -> void:
 		options.append("pop")
 		options.append("lunge")
 	if phase >= 3:
-		options.append("spiral")
+		# the champion's phase: a boxing combination — jab, jab, cross
+		options.append("combo")
+		options.append("combo")
 		options.append("lunge")
 	# everything except the summon goes through a visible, audible crank first
 	var pick: String = options[randi() % options.size()]
@@ -187,9 +195,35 @@ func _fire_after_crank() -> void:
 			_spiral_shots = 14 + phase * 5
 			_spiral_step = 0.0
 			_spiral_angle = randf() * TAU
+		"combo":
+			state = State.COMBO
+			_combo_left = 3
+			_timer = 0.0
 		_:
 			_lunges_left = 1 + phase          # more bounces the angrier he gets
 			_start_lunge()
+
+
+## Jab, jab, cross: two quick paired gloves, then a wide five-glove cross.
+## Every punch is aimed at where you are NOW, so standing still through the
+## combination is what gets you hit — keep moving and it whiffs behind you.
+func _combo_punch() -> void:
+	var dir := Vector2.RIGHT
+	if player != null:
+		dir = (player.global_position - global_position).normalized()
+	if _combo_left > 1:
+		AudioManager.play_sfx(sfx_land, 0.1, -4.0)
+		for off in [-5.0, 5.0]:
+			_shoot(dir.rotated(deg_to_rad(off)), 260.0)
+		_timer = 0.26
+	else:
+		AudioManager.play_sfx(sfx_pop, 0.05, 1.0)
+		for i in 5:
+			_shoot(dir.rotated(deg_to_rad(lerp(-16.0, 16.0, i / 4.0))), 230.0)
+		EventBus.screen_shake.emit(3.5, 0.2)
+	_combo_left -= 1
+	if _combo_left <= 0:
+		_end_attack(1.2)
 
 
 func _start_lunge() -> void:

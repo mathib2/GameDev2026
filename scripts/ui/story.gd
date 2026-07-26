@@ -40,6 +40,7 @@ const FLOORS: Array = [
 	["THE GYM", "Build your muscles."],
 	["THE STEAM ROOM", "It's getting hot in here."],
 	["THE UNDERGROUND ARENA", "The final test."],
+	["????", "There is no fifth floor."],
 ]
 
 const VICTORY: Array[String] = [

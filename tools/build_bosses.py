@@ -448,10 +448,100 @@ def jack_params(row, col):
                 collapse=1.0 if col >= 4 else 0.0)
 
 
-# ── themed projectiles ───────────────────────────────────────────────────────
+# ── ????? — boss of the fifth floor ──────────────────────────────────────────
+# The floor has no name and the boss has no face. A pair of pale moth wings,
+# and where the body should be, a censor bar. The bar is not covering the
+# sprite — the bar is what the place lets you see. It jitters a pixel or two
+# between frames, which at 96px is exactly the amount of wrong that reads as
+# wrong without reading as broken.
+WING = (232, 232, 236)
+WING_SH = (168, 168, 176)
+WING_DK = (96, 96, 104)
+VEIN = (54, 54, 60)
+BAR = (0, 0, 0)
+STATIC_PX = (240, 240, 244)
+
+
+def _wing(d, ax, ay, side, flap, tatter=0.0):
+    """One moth wing anchored at (ax, ay). `flap` raises and spreads it;
+    `tatter` eats it away for the death row."""
+    spread = 26 + int(flap * 12)
+    lift = int(flap * 14)
+    lobes = [
+        (ax + side * (10 + spread // 2), ay - 10 - lift, spread // 2 + 6, 14),
+        (ax + side * (8 + spread // 3), ay + 4 - lift // 2, spread // 3 + 7, 11),
+        (ax + side * 9, ay + 14, 9, 8),
+    ]
+    for i, (cx, cy, rx, ry) in enumerate(lobes):
+        if tatter > 0.0 and i < int(tatter * 3):
+            continue
+        rx = max(3, int(rx * (1.0 - tatter * 0.5)))
+        ry = max(2, int(ry * (1.0 - tatter * 0.5)))
+        d.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=WING, outline=WING_DK)
+        d.ellipse([cx - rx + 2, cy - ry + 2, cx + rx - 3, cy + ry - 2], fill=WING_SH)
+        d.ellipse([cx - rx + 4, cy - ry + 3, cx + rx - 6, cy - 1], fill=WING)
+    # veins, from the anchor out through each lobe
+    for cx, cy, rx, ry in lobes[:2]:
+        d.line([ax + side * 6, ay, cx, cy], fill=VEIN, width=1)
+    # one dark eyespot on the big lobe — moths have them; this one watches
+    bx, by_, rx, ry = lobes[0]
+    if tatter < 0.4:
+        d.ellipse([bx - 3, by_ - 3, bx + 3, by_ + 3], fill=WING_DK)
+        d.ellipse([bx - 1, by_ - 1, bx + 1, by_ + 1], fill=VEIN)
+
+
+def unknown(d, flap, jit_x, jit_y, bar_h, static_n, tatter=0.0, bar_gone=0.0):
+    cx = F // 2
+    cy = F // 2 + 4
+
+    if tatter >= 1.0 and bar_gone >= 1.0:
+        # nothing left but pieces of bar, refusing to say what they covered
+        for dx, dy, w in ((-22, 8, 12), (-4, 14, 9), (10, 6, 14), (20, 16, 7)):
+            d.rectangle([cx + dx, cy + dy, cx + dx + w, cy + dy + 4], fill=BAR)
+        return
+
+    _wing(d, cx - 8, cy - 4, -1, flap, tatter)
+    _wing(d, cx + 8, cy - 4, 1, flap, tatter)
+
+    # the bar. Pure black, wider than whatever is under it could possibly be.
+    bw = 30
+    bh = 16 + int(bar_h * 6)
+    bx = cx + jit_x
+    by_ = cy + jit_y
+    if bar_gone < 1.0:
+        d.rectangle([bx - bw, by_ - bh, bx + bw, by_ + bh], fill=BAR)
+        # static crawling on the bar when it is agitated
+        seeds = [(7, 3), (23, 9), (41, 5), (13, 25), (33, 27), (51, 17),
+                 (17, 13), (45, 23), (27, 19), (9, 21)]
+        for i in range(min(static_n, len(seeds))):
+            sx, sy = seeds[i]
+            d.point((bx - bw + sx, by_ - bh + sy % (bh * 2)), fill=STATIC_PX)
 # Each redesigned boss fires what it is: the Choir vents scalding vapour, Jack
 # throws gloves, the General hands out dumbbells. Same 10px scale family as
 # fx_enemy_shot, passed into EnemyProjectile via setup()'s texture argument.
+def un_params(row, col):
+    n = max(1, ROW_FRAMES[row] - 1)
+    t = col / n
+    if row == 0:                                            # idle: slow wingbeat
+        return dict(flap=0.3 + 0.25 * math.sin(t * math.tau),
+                    jit_x=(0, 1, 0, -1)[col % 4], jit_y=(0, 0, 1, 0)[col % 4],
+                    bar_h=0.0, static_n=2)
+    if row == 1:                                            # "walk": it drifts
+        return dict(flap=0.45 + 0.3 * math.sin(t * math.tau),
+                    jit_x=(1, -1, 1, -1)[col % 4], jit_y=(0, 1, -1, 0)[col % 4],
+                    bar_h=0.1, static_n=3)
+    if row == 2:                                            # attack: the bar grows
+        return dict(flap=0.5 + t * 0.5, jit_x=int((t * 7) % 3) - 1,
+                    jit_y=int((t * 5) % 3) - 1, bar_h=t, static_n=2 + int(t * 8))
+    if row == 3:                                            # hurt
+        return dict(flap=0.9, jit_x=-2 + 4 * col, jit_y=2 - 4 * col,
+                    bar_h=0.4, static_n=10)
+    return dict(flap=max(0.0, 0.6 - t * 0.8),               # death: it comes apart
+                jit_x=(3, -3, 2, -2, 0)[col], jit_y=(-2, 2, -1, 1, 0)[col],
+                bar_h=0.2, static_n=10, tatter=t,
+                bar_gone=0.0 if col < 4 else 1.0)
+
+
 def fx_steam():
     img = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -481,13 +571,34 @@ def fx_dumbbell():
     return img
 
 
+def fx_static():
+    """A shard of censorship: black square, white noise."""
+    img = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rectangle([1, 1, 8, 8], fill=BAR, outline=(50, 50, 54))
+    for x, y in ((2, 3), (5, 2), (7, 5), (3, 6), (6, 7), (4, 4)):
+        d.point((x, y), fill=STATIC_PX if (x + y) % 2 else WING_SH)
+    return img
+
+
+def fx_feather():
+    """A wing shard, thrown."""
+    img = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.polygon([(1, 8), (3, 3), (7, 1), (8, 2), (5, 6), (2, 9)], fill=WING,
+              outline=WING_DK)
+    d.line([2, 8, 7, 2], fill=WING_SH)
+    return img
+
+
 def main():
     root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
     out = os.path.join(root, "assets", "bosses")
     os.makedirs(out, exist_ok=True)
     for name, fn, params in (("boss_porcelain_choir", porcelain, porc_params),
                              ("boss_jack", jack, jack_params),
-                             ("boss_gingerbread_general", ginger_general, gg_params)):
+                             ("boss_gingerbread_general", ginger_general, gg_params),
+                             ("boss_unknown", unknown, un_params)):
         sheet = build(fn, params)
         sheet.save(os.path.join(out, f"{name}.png"))
         print(f"assets/bosses/{name}.png  ({F * COLS}x{F * ROWS}, {COLS}x{ROWS} grid)")
@@ -495,7 +606,8 @@ def main():
     fxout = os.path.join(root, "assets", "effects")
     os.makedirs(fxout, exist_ok=True)
     for name, fn in (("fx_steam", fx_steam), ("fx_glove", fx_glove),
-                     ("fx_dumbbell", fx_dumbbell)):
+                     ("fx_dumbbell", fx_dumbbell), ("fx_static", fx_static),
+                     ("fx_feather", fx_feather)):
         im = fn()
         im.save(os.path.join(fxout, f"{name}.png"))
         print(f"assets/effects/{name}.png  {im.size[0]}x{im.size[1]}")

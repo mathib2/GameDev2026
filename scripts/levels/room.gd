@@ -17,30 +17,40 @@ const WEAPON_PEDESTAL := preload("res://scenes/items/WeaponPedestal.tscn")
 const CHEST := preload("res://scripts/items/chest.gd")
 const SHRINE := preload("res://scripts/items/skill_shrine.gd")
 const BOOKS_TEX := preload("res://assets/environment/prop_books.png")
-# One boss per floor, indexed by floor. With four bosses and four floors a run
-# no longer repeats one, and each is matched to where it lives: the King holds
-# the Playground, the General drills in the Gym, the Choir sings through the
-# Steam Room, and Jack runs the Underground Arena. New bosses just join the list.
+# One boss per floor, indexed by floor. Five floors, five bosses, each matched
+# to where it lives: the King holds the Playground, the General drills in the
+# Gym, the Choir sings through the Steam Room, Jack runs the Underground Arena,
+# and the fifth floor's boss is whatever the bar is covering.
 const BOSS_SCENES: Array[PackedScene] = [
 	preload("res://scenes/bosses/TeddyBearKing.tscn"),
 	preload("res://scenes/bosses/GingerbreadGeneral.tscn"),
 	preload("res://scenes/bosses/PorcelainChoir.tscn"),
 	preload("res://scenes/bosses/Jack.tscn"),
+	preload("res://scenes/bosses/Unknown.tscn"),
 ]
-## Floors 5-14 use this with a BossData attached. See _spawn_boss.
+## Data-boss fallback, only reachable if floors ever outnumber BOSS_SCENES
+## again. The run is capped at five floors, so today this is a safety net.
 const GENERIC_BOSS := preload("res://scenes/bosses/GenericBoss.tscn")
 
 ## One surface per floor: mats for the Playground, boards for the Gym, ceramic
-## for the Steam Room, concrete for the Arena. Same 5-frame format as the old
-## shared sheet, so _paint_floor() only changes which PNG it scatters. Floors
-## deeper than the list clamp to the last — everything below the Arena is arena.
+## for the Steam Room, concrete for the Arena — and on the fifth floor the
+## place stops pretending, in black and white. Same 5-frame format throughout,
+## so _paint_floor() only changes which PNG it scatters.
 const FLOOR_TEXTURES: Array[Texture2D] = [
 	preload("res://assets/environment/tiles_floor_playground.png"),
 	preload("res://assets/environment/tiles_floor_gym.png"),
 	preload("res://assets/environment/tiles_floor_steam.png"),
 	preload("res://assets/environment/tiles_floor_arena.png"),
+	preload("res://assets/environment/tiles_floor_unknown.png"),
 ]
-const WALL_TEX := preload("res://assets/environment/tiles_wall.png")
+## Walls stay shared brick until ????, which gets its own colourless course.
+const WALL_TEXTURES: Array[Texture2D] = [
+	preload("res://assets/environment/tiles_wall.png"),
+	preload("res://assets/environment/tiles_wall.png"),
+	preload("res://assets/environment/tiles_wall.png"),
+	preload("res://assets/environment/tiles_wall.png"),
+	preload("res://assets/environment/tiles_wall_unknown.png"),
+]
 const DOOR_TEX := preload("res://assets/environment/tiles_door.png")
 const CRATE_TEX := preload("res://assets/environment/prop_crate.png")
 const SFX_DOOR_SLAM := preload("res://assets/audio/sfx/block_thud.wav")
@@ -59,12 +69,14 @@ var _tint: Color = Color.WHITE
 ## Per-floor ambience tints, layered over each floor's own tilesheet. The
 ## floors carry their identity in the texture now; the tint's real job is the
 ## shared walls and props — sun-flat on the Playground, warm under gym lights,
-## humid in the Steam Room, red where the Arena waits.
+## humid in the Steam Room, red where the Arena waits, and nothing at all on
+## the fifth floor, whose art is already colourless.
 const FLOOR_TINTS: Array[Color] = [
 	Color(1.0, 1.0, 1.0),
 	Color(1.06, 0.98, 0.9),
 	Color(0.9, 1.0, 1.06),
 	Color(1.04, 0.92, 0.9),
+	Color(1.0, 1.0, 1.0),
 ]
 
 ## How often a combat room ignores the authored library and takes a generated
@@ -170,7 +182,7 @@ func _build_walls() -> void:
 
 func _wall_tile(body: StaticBody2D, tx: int, ty: int) -> void:
 	var s := Sprite2D.new()
-	s.texture = WALL_TEX
+	s.texture = WALL_TEXTURES[clampi(GameState.floor_index, 0, WALL_TEXTURES.size() - 1)]
 	s.hframes = 2
 	s.frame = 0 if (tx + ty) % 3 else 1
 	s.modulate = _tint

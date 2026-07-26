@@ -151,5 +151,3 @@ Honest list of what is scaffolded but unfinished:
 - **Shop rooms** price items but there is still no dedicated shop *UI* — the
   shop is pedestals, shrines and a chest laid out in a room.
 - **The minimap** marks visited rooms and the boss, but not shops or treasure.
-- **Bosses do not scale past floor 4.** `SUB-BASEMENT n` floors reuse the
-  four-boss rotation with only the `floor_index` health multiplier.

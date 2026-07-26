@@ -47,12 +47,13 @@ go. The dodge roll is the skill expression.
 
 `Start → explore rooms → fight → collect → get stronger → boss → descend`
 
-Four floors: **The Playground → The Gym → The Steam Room → The Underground
-Arena** — then the place keeps going, and stops pretending it was ever about
-training. Each floor has its own surface (rubber mats, court boards, wet
-ceramic, cracked concrete) and is procedurally generated — a random walk that
-promotes dead ends to special rooms, so the boss is always the furthest point
-from the start.
+Five floors: **The Playground → The Gym → The Steam Room → The Underground
+Arena → ????** — the last one is in black and white, and there is no name for
+what is at the bottom of it. Each floor has its own surface (rubber mats,
+court boards, wet ceramic, cracked concrete, a colourless grid) and is
+procedurally generated — a random walk that promotes dead ends to special
+rooms, so the boss is always the furthest point from the start. Five floors,
+five bespoke bosses; the cap is deliberate.
 
 **Room types:** combat · treasure · shop · elite · secret · boss
 

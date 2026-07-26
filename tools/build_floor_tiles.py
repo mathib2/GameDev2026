@@ -281,11 +281,87 @@ def arena_tile(variant, rng):
     return img
 
 
+# ── ???? ── the fifth floor. It does not replicate anything. ───────────────
+# Black and white only. The place has stopped pretending to be somewhere you
+# would train — the floor is a grid the way a room is a room in a diagram, and
+# some of the tiles have simply not been filled in.
+UN = (26, 26, 28)
+UN_GRID = (74, 74, 78)
+UN_LT = (198, 198, 202)
+UN_WHITE = (238, 238, 240)
+UN_VOID = (8, 8, 9)
+
+
+def unknown_tile(variant, rng):
+    img = Image.new("RGBA", (T, T), (*UN, 255))
+    d = ImageDraw.Draw(img, "RGBA")
+
+    # the diagram grid: thin light lines every 8px
+    for y in (0, 8):
+        d.line([0, y, T - 1, y], fill=UN_GRID)
+    for x in (0, 8):
+        d.line([x, 0, x, T - 1], fill=UN_GRID)
+
+    if variant == 1:
+        # static: a patch of white noise where the floor forgot itself
+        cx, cy = rng.randrange(3, T - 3), rng.randrange(3, T - 3)
+        for _ in range(14):
+            px = cx + rng.randrange(-3, 4)
+            py = cy + rng.randrange(-3, 4)
+            if 0 <= px < T and 0 <= py < T:
+                d.point((px, py), fill=rng.choice((UN_WHITE, UN_LT, UN_GRID)))
+    elif variant == 2:
+        # one quadrant inverted, like a texture that failed to load
+        qx, qy = rng.choice(((1, 1), (9, 1), (1, 9), (9, 9)))
+        d.rectangle([qx, qy, qx + 6, qy + 6], fill=(*UN_LT, 255))
+        for _ in range(5):
+            d.point((qx + rng.randrange(0, 7), qy + rng.randrange(0, 7)), fill=UN)
+    elif variant == 3:
+        # a tile that is simply not there
+        qx, qy = rng.choice(((1, 1), (9, 1), (1, 9), (9, 9)))
+        d.rectangle([qx, qy, qx + 6, qy + 6], fill=(*UN_VOID, 255))
+        d.rectangle([qx, qy, qx + 6, qy + 6], outline=(*UN_GRID, 255))
+    elif variant == 4:
+        # white hairline crack — light leaking through from nowhere
+        x, y = rng.randrange(3, T - 3), rng.randrange(0, 4)
+        for _ in range(rng.randrange(6, 10)):
+            d.point((x, y), fill=UN_LT)
+            x += rng.choice((-1, 0, 1))
+            y += 1
+            if not (0 <= x < T and 0 <= y < T):
+                break
+
+    speckle(d, rng, mix(UN, UN_LT, 0.4), 3)
+    speckle(d, rng, mix(UN, UN_VOID, 0.8), 3)
+    corners(d, UN, UN_VOID)
+    return img
+
+
+def unknown_wall_tile(variant, rng):
+    """Same 2-frame contract as tiles_wall.png, in the fifth floor's non-colour."""
+    img = Image.new("RGBA", (T, T), (18, 18, 20, 255))
+    d = ImageDraw.Draw(img, "RGBA")
+    # lit top lip + deep base shadow, exactly like the real walls — the shape
+    # of a wall with everything else subtracted
+    d.rectangle([0, 0, T - 1, 2], fill=(52, 52, 56))
+    d.line([0, 0, T - 1, 0], fill=UN_WHITE)
+    d.rectangle([0, T - 3, T - 1, T - 1], fill=(6, 6, 7))
+    d.line([0, 7, T - 1, 7], fill=(8, 8, 9))
+    off = 0 if variant == 0 else 8
+    d.line([off, 3, off, 6], fill=(8, 8, 9))
+    d.line([(off + 8) % T, 8, (off + 8) % T, T - 4], fill=(8, 8, 9))
+    for _ in range(4):
+        d.point((rng.randrange(T), rng.randrange(3, T - 3)),
+                fill=rng.choice(((60, 60, 64), UN_LT)))
+    return img
+
+
 FLOORS = (
     ("tiles_floor_playground", playground_tile),
     ("tiles_floor_gym", gym_tile),
     ("tiles_floor_steam", steam_tile),
     ("tiles_floor_arena", arena_tile),
+    ("tiles_floor_unknown", unknown_tile),
 )
 
 
@@ -301,6 +377,12 @@ def main():
             sheet.alpha_composite(tile(i, rng), (i * T, 0))
         sheet.save(os.path.join(out, f"{name}.png"))
         print(f"assets/environment/{name}.png  ({T * FRAMES}x{T}, {FRAMES} frames)")
+
+    sheet = Image.new("RGBA", (T * 2, T), (0, 0, 0, 0))
+    for i in range(2):
+        sheet.alpha_composite(unknown_wall_tile(i, rng), (i * T, 0))
+    sheet.save(os.path.join(out, "tiles_wall_unknown.png"))
+    print(f"assets/environment/tiles_wall_unknown.png  ({T * 2}x{T}, 2 frames)")
 
 
 if __name__ == "__main__":

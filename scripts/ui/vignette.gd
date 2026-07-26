@@ -18,6 +18,7 @@ const MOODS: Array = [
 	[Color(0.04, 0.02, 0.02), 0.56],   # gym — warm and dusty
 	[Color(0.02, 0.04, 0.04), 0.64],   # steam room — teal, air you can feel
 	[Color(0.05, 0.01, 0.02), 0.72],   # underground arena — red and close
+	[Color(0.0, 0.0, 0.0), 0.82],      # ???? — colour does not apply
 ]
 
 var _rect: ColorRect

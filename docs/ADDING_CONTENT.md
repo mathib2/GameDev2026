@@ -86,11 +86,12 @@ Bosses are bespoke enough to justify their own script. Copy
 - do the intro straight: `boss_intro_started`, a big shake, a serious sting.
   **Then** the squeak. The game must never acknowledge the joke.
 
-There is one boss per floor: `Room.BOSS_SCENES` is indexed by `floor_index`,
-not cycled. To add a fifth, write the script and scene, append it to that list,
-and give it a floor to live on in `RunManager.FLOOR_NAMES` — the smoke test
-derives its pass criteria from `total_floors()`, so it starts requiring the new
-boss automatically rather than silently skipping it.
+There is one boss per floor — five of each, and the cap is deliberate.
+`Room.BOSS_SCENES` is indexed by `floor_index`, not cycled. To add a sixth,
+write the script and scene, append it to that list, and give it a floor to
+live on in `RunManager.FLOOR_NAMES` — the smoke test derives its pass criteria
+from `total_floors()`, so it starts requiring the new boss automatically
+rather than silently skipping it.
 
 Art: `tools/build_bosses.py` draws the 5x5 96px sheets procedurally. Add a draw
 function plus a `*_params` function returning per-frame values, and add both to
