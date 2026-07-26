@@ -25,10 +25,49 @@ var _rng := RandomNumberGenerator.new()
 var _travelling: bool = false
 var _run_active: bool = false
 
+## Shared fallbacks, and the per-floor/per-boss slots that override them.
+##
+## PLACEHOLDERS, on purpose: none of the per-floor or per-boss files exist
+## yet. Drop a .wav at any path below and that floor or boss starts using it
+## on the next run — nothing else to wire. Until then, everything falls back
+## to the two shared tracks, exactly as before.
 var music_game: AudioStream = preload("res://assets/audio/music/16. Feral Amalgamation.wav")
 var music_boss: AudioStream = preload("res://assets/audio/music/04. The Filthy Mind (ft. SixteenInMono).wav")
+
+const FLOOR_MUSIC_PATHS := [
+	"res://assets/audio/music/music_floor_1_playground.wav",
+	"res://assets/audio/music/music_floor_2_gym.wav",
+	"res://assets/audio/music/music_floor_3_steam_room.wav",
+	"res://assets/audio/music/music_floor_4_arena.wav",
+	"res://assets/audio/music/music_floor_5_unknown.wav",
+]
+const BOSS_MUSIC_PATHS := [
+	"res://assets/audio/music/music_boss_1_teddy_king.wav",
+	"res://assets/audio/music/music_boss_2_gingerbread_general.wav",
+	"res://assets/audio/music/music_boss_3_porcelain_choir.wav",
+	"res://assets/audio/music/music_boss_4_jack.wav",
+	"res://assets/audio/music/music_boss_5_unknown.wav",
+]
+
 var sfx_door: AudioStream = preload("res://assets/audio/sfx/door_open.wav")
 var sfx_descend: AudioStream = preload("res://assets/audio/sfx/floor_descend.wav")
+
+
+## The floor's own track if someone has supplied it, else the shared one.
+## ResourceLoader.exists follows import remaps, so this keeps working in an
+## exported build once the files are real.
+func _floor_music(index: int) -> AudioStream:
+	var path: String = FLOOR_MUSIC_PATHS[clampi(index, 0, FLOOR_MUSIC_PATHS.size() - 1)]
+	if ResourceLoader.exists(path):
+		return load(path)
+	return music_game
+
+
+func _boss_music(index: int) -> AudioStream:
+	var path: String = BOSS_MUSIC_PATHS[clampi(index, 0, BOSS_MUSIC_PATHS.size() - 1)]
+	if ResourceLoader.exists(path):
+		return load(path)
+	return music_boss
 
 
 func _ready() -> void:
@@ -103,7 +142,7 @@ func _enter_floor(index: int) -> void:
 	current_info = generator.start_room
 	current_info.visited = true
 	_load_room(current_info, "")
-	AudioManager.play_music(music_game)
+	AudioManager.play_music(_floor_music(index))
 	EventBus.floor_entered.emit(index, floor_name())
 	EventBus.toast.emit(floor_name(), Color(1, 0.85, 0.4))
 
@@ -141,10 +180,13 @@ func _load_room(info, from_dir: String) -> void:
 	EventBus.room_entered.emit(current_room)
 	EventBus.minimap_dirty.emit()
 
+	# Each floor keeps its own track, and each boss gets its own sting —
+	# leaving the boss room hands the floor's music back.
+	var floor_track := _floor_music(GameState.floor_index)
 	if info.kind == FloorGenerator.RoomKind.BOSS:
-		AudioManager.play_music(music_boss)
-	elif AudioManager._current_music != music_game:
-		AudioManager.play_music(music_game)
+		AudioManager.play_music(_boss_music(GameState.floor_index))
+	elif AudioManager._current_music != floor_track:
+		AudioManager.play_music(floor_track)
 
 
 func _apply_camera_limits() -> void:

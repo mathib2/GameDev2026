@@ -198,6 +198,18 @@ procedural generator that fills the gaps.
 
 ---
 
+## Add music
+
+Every floor and every boss has its own music slot, currently a placeholder.
+`RunManager.FLOOR_MUSIC_PATHS` and `BOSS_MUSIC_PATHS` name one file per floor —
+drop a `.wav` at the named path (e.g.
+`assets/audio/music/music_floor_2_gym.wav` or
+`assets/audio/music/music_boss_5_unknown.wav`) and that floor or boss uses it
+on the next run. No code changes: the slot checks whether the file exists and
+falls back to the shared game/boss tracks until it does.
+
+---
+
 ## Add a room type
 
 `FloorGenerator.RoomKind` plus a case in `Room.populate()`, and a name in
