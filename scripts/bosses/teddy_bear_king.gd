@@ -46,10 +46,11 @@ func _ready() -> void:
 	_do_intro()
 
 
+
 func _do_intro() -> void:
 	state = State.INTRO
 	EventBus.boss_spawned.emit(self, "PLAYGROUND KING")
-	EventBus.boss_intro_started.emit("THE TEDDY BEAR KING", "STRONGEST AMONGST CLASSMATES")
+	EventBus.boss_intro_started.emit("THE TEDDY BEAR KING", "STRONGEST ON THE FIELD")
 	AudioManager.play_sfx(sfx_roar, 0.0, 3.0)
 	EventBus.screen_shake.emit(9.0, 1.4)
 	anim.play(&"idle")
