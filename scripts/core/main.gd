@@ -58,14 +58,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-func start_run() -> void:
+func start_run(two_player: bool = false) -> void:
 	_running = true
 	menu.visible = false
 	over.visible = false
 	hud.visible = true
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN   # the HUD crosshair takes over
-	RunManager.start_run()
+	RunManager.start_run(two_player)
 
 
 func _toggle_pause() -> void:
@@ -113,6 +113,7 @@ func quit_to_menu() -> void:
 		c.queue_free()
 	RunManager.current_room = null
 	RunManager.player = null
+	RunManager.player2 = null
 	over.visible = false
 	pause.visible = false
 	hud.visible = false

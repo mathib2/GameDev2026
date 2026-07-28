@@ -33,11 +33,12 @@ func _ready() -> void:
 	_sprite.texture = TEX_GOLD if gold else TEX
 	_sprite.hframes = 2
 	_sprite.frame = 0
+	_sprite.scale = Vector2(1.4, 1.4)
 	add_child(_sprite)
 
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(20, 18)
+	shape.size = Vector2(20, 18) * 1.4
 	col.shape = shape
 	add_child(col)
 

@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/items/weapon_pedestal.gd" id="1_wped"]
+[ext_resource type="Texture2D" path="res://assets/textures/glow_halo.tres" id="2_glow"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_wp"]
 radius = 22.0
@@ -10,6 +11,11 @@ script = ExtResource("1_wped")
 
 [node name="Icon" type="Sprite2D" parent="."]
 position = Vector2(0, -18)
+
+[node name="Glow" type="Sprite2D" parent="Icon"]
+show_behind_parent = true
+modulate = Color(1, 1, 1, 0.45)
+texture = ExtResource("2_glow")
 
 [node name="Label" type="Label" parent="."]
 offset_left = -70.0

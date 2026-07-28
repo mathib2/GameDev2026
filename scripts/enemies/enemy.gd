@@ -48,6 +48,10 @@ func _ready() -> void:
 	# with a chasm in it cannot quietly delete its own fight. Only the player
 	# can fall.
 	collision_mask = 1 | 16
+	# GROUND mode's floor/wall classification has no meaning in a top-down room
+	# and catches the body on corners (CHARGER, e.g. the toy car, can pin
+	# against two walls instead of sliding along one). FLOATING is correct here.
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	_home = global_position
 	_cooldown = randf() * 1.5
 	_idle_noise = randf_range(3.0, 9.0)
@@ -58,7 +62,9 @@ func _ready() -> void:
 	if data == null:
 		push_warning("[Enemy] %s has no EnemyData" % name)
 		return
-	health = data.max_health
+	# room spawns overwrite this with depth scaling; the default matters for
+	# boss minion summons, which never set health themselves
+	health = data.max_health * (2.0 if GameState.two_player else 1.0)
 	if data.spritesheet != null:
 		anim.texture = data.spritesheet
 	if not data.animations.is_empty():
@@ -79,9 +85,9 @@ func _physics_process(delta: float) -> void:
 		return
 	if data == null:
 		return
-	if player == null or not is_instance_valid(player):
-		var ps := get_tree().get_nodes_in_group("player")
-		player = ps[0] if not ps.is_empty() else null
+	# re-pick every frame so both co-op players draw aggro; in 1P this
+	# returns the same node it always did
+	player = RunManager.nearest_player(global_position)
 
 	if _cooldown > 0.0: _cooldown -= delta
 	if _state_timer > 0.0: _state_timer -= delta

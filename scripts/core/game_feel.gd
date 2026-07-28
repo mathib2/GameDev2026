@@ -15,6 +15,7 @@ var _shake_decay: float = 12.0
 var _hitstop_left: float = 0.0
 
 var camera: Camera2D = null
+var shake_enabled: bool = true
 
 
 func _ready() -> void:
@@ -43,6 +44,8 @@ func _process(delta: float) -> void:
 
 ## Additive so several hits in a frame stack, capped so it stays readable.
 func shake(strength: float, duration: float = 0.0) -> void:
+	if not shake_enabled:
+		return
 	_shake_amount = minf(14.0, _shake_amount + strength)
 	if duration > 0.0:
 		_shake_decay = strength / maxf(0.01, duration)

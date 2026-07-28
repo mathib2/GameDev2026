@@ -24,6 +24,24 @@ var state: State = State.NORMAL
 var facing: Vector2 = Vector2.DOWN
 var aim: Vector2 = Vector2.DOWN
 
+## Co-op identity. Set by RunManager BEFORE add_child; 1P defaults leave every
+## action name and stat lookup exactly as before. In 2P the prefix routes this
+## body to one physical pad's cloned actions (p0_*/p1_*).
+var player_index: int = 0
+var input_prefix: String = ""
+
+var _act_move_l: StringName
+var _act_move_r: StringName
+var _act_move_u: StringName
+var _act_move_d: StringName
+var _act_aim_l: StringName
+var _act_aim_r: StringName
+var _act_aim_u: StringName
+var _act_aim_d: StringName
+var _act_attack: StringName
+var _act_dodge: StringName
+var _act_interact: StringName
+
 var _attack_timer: float = 0.0
 var _dodge_timer: float = 0.0
 var _dodge_cd: float = 0.0
@@ -48,7 +66,22 @@ func _ready() -> void:
 	add_to_group("player")
 	collision_layer = 2
 	collision_mask = 1
-	GameFeel.camera = camera
+	_act_move_l = StringName(input_prefix + "move_left")
+	_act_move_r = StringName(input_prefix + "move_right")
+	_act_move_u = StringName(input_prefix + "move_up")
+	_act_move_d = StringName(input_prefix + "move_down")
+	_act_aim_l = StringName(input_prefix + "aim_left")
+	_act_aim_r = StringName(input_prefix + "aim_right")
+	_act_aim_u = StringName(input_prefix + "aim_up")
+	_act_aim_d = StringName(input_prefix + "aim_down")
+	_act_attack = StringName(input_prefix + "attack")
+	_act_dodge = StringName(input_prefix + "dodge")
+	_act_interact = StringName(input_prefix + "interact")
+	# one screen, one camera: P2's must never grab current or steal the shake
+	if player_index == 0:
+		GameFeel.camera = camera
+	else:
+		camera.enabled = false
 	EventBus.player_died.connect(_on_died)
 	EventBus.player_spawned.emit(self)
 
@@ -87,8 +120,8 @@ func _tick_timers(delta: float) -> void:
 
 
 func _handle_move(delta: float) -> void:
-	var input := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
-	var speed := base_speed * GameState.stat("speed_mult")
+	var input := Input.get_vector(_act_move_l, _act_move_r, _act_move_u, _act_move_d)
+	var speed := base_speed * GameState.stat("speed_mult", player_index)
 	if input != Vector2.ZERO:
 		velocity = velocity.move_toward(input * speed, acceleration * delta)
 		facing = input.normalized()
@@ -103,13 +136,13 @@ func _handle_move(delta: float) -> void:
 
 
 func _handle_attack() -> void:
-	var w := GameState.weapon
+	var w := GameState.weapon_of(player_index)
 	if w == null or _attack_timer > 0.0:
 		return
-	if not Input.is_action_pressed(&"attack"):
+	if not Input.is_action_pressed(_act_attack):
 		return
 	aim = _aim_vector()
-	_attack_timer = w.cooldown / maxf(0.1, GameState.stat("fire_rate_mult"))
+	_attack_timer = w.cooldown / maxf(0.1, GameState.stat("fire_rate_mult", player_index))
 	state = State.ATTACK
 	anim.play(&"attack", true)
 	AudioManager.play_sfx(w.sfx_use if w.sfx_use else sfx_swing)
@@ -133,11 +166,12 @@ func _melee(w: WeaponData) -> void:
 		if rad_to_deg(absf(to.angle_to(aim))) > w.arc_degrees * 0.5:
 			continue
 		var dmg_roll := w.roll_damage()
-		var dmg: float = dmg_roll[0] * GameState.stat("damage_mult") + GameState.stat("damage_flat")
-		var crit: bool = dmg_roll[1] or randf() < GameState.stat("crit_chance")
+		var dmg: float = dmg_roll[0] * GameState.stat("damage_mult", player_index) \
+			+ GameState.stat("damage_flat", player_index)
+		var crit: bool = dmg_roll[1] or randf() < GameState.stat("crit_chance", player_index)
 		if body.has_method("take_damage"):
 			body.take_damage(dmg, global_position, crit,
-				w.knockback * GameState.stat("knockback_mult"))
+				w.knockback * GameState.stat("knockback_mult", player_index))
 			hit_any = true
 	if hit_any:
 		EventBus.hit_stop.emit(w.hitstop)
@@ -159,11 +193,12 @@ func _shoot(w: WeaponData) -> void:
 		get_parent().add_child(p)
 		p.global_position = global_position + dir * 14.0
 		var roll := w.roll_damage()
-		var dmg: float = roll[0] * GameState.stat("damage_mult") + GameState.stat("damage_flat")
-		var crit: bool = roll[1] or randf() < GameState.stat("crit_chance")
+		var dmg: float = roll[0] * GameState.stat("damage_mult", player_index) \
+			+ GameState.stat("damage_flat", player_index)
+		var crit: bool = roll[1] or randf() < GameState.stat("crit_chance", player_index)
 		p.setup(w.projectile_texture, dir * w.projectile_speed, dmg, true,
 			w.projectile_range, w.pierce, crit)
-		p.knockback = w.knockback * GameState.stat("knockback_mult")
+		p.knockback = w.knockback * GameState.stat("knockback_mult", player_index)
 	# one flash for the whole volley, aimed down the middle of the spread
 	Effects.spawn_muzzle(get_parent(), global_position + aim * 13.0, aim,
 		Color(1, 0.94, 0.72), 1.0 + w.shake * 0.06)
@@ -175,13 +210,13 @@ func _shoot(w: WeaponData) -> void:
 
 
 func _handle_dodge() -> void:
-	if _dodge_cd > 0.0 or not Input.is_action_just_pressed(&"dodge"):
+	if _dodge_cd > 0.0 or not Input.is_action_just_pressed(_act_dodge):
 		return
-	var input := Input.get_vector(&"move_left", &"move_right", &"move_up", &"move_down")
+	var input := Input.get_vector(_act_move_l, _act_move_r, _act_move_u, _act_move_d)
 	_dodge_dir = input.normalized() if input != Vector2.ZERO else facing
 	state = State.DODGE
 	_dodge_timer = dodge_time
-	_dodge_cd = dodge_cooldown * GameState.stat("dodge_cooldown_mult")
+	_dodge_cd = dodge_cooldown * GameState.stat("dodge_cooldown_mult", player_index)
 	_invuln = maxf(_invuln, dodge_time + 0.06)
 	anim.play(&"dodge", true)
 	AudioManager.play_sfx(sfx_dodge)
@@ -190,12 +225,20 @@ func _handle_dodge() -> void:
 
 func _aim_vector() -> Vector2:
 	var stick := Vector2(
-		Input.get_axis(&"aim_left", &"aim_right"),
-		Input.get_axis(&"aim_up", &"aim_down"))
+		Input.get_axis(_act_aim_l, _act_aim_r),
+		Input.get_axis(_act_aim_u, _act_aim_d))
 	if stick.length() > 0.3:
 		return stick.normalized()
+	# the mouse belongs to nobody in co-op — fall back to facing instead
+	if input_prefix != "":
+		return facing
 	var to_mouse := get_global_mouse_position() - global_position
 	return to_mouse.normalized() if to_mouse.length() > 4.0 else facing
+
+
+## Pedestals ask "did THIS player press pickup?" — hand them the right action.
+func interact_action() -> StringName:
+	return _act_interact
 
 
 func _update_anim() -> void:
@@ -225,7 +268,7 @@ func take_damage(amount: int, from: Vector2 = Vector2.ZERO) -> void:
 		return
 	if GameState.godmode:
 		return
-	GameState.damage(amount)
+	GameState.damage(amount, player_index)
 	if GameState.health <= 0:
 		return
 	_invuln = invuln_time

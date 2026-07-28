@@ -63,7 +63,9 @@ var _walls_body: StaticBody2D = null
 ## Pit tiles, keyed Vector2i -> true, plus where the player last stood on
 ## real floor — that is where a fall puts them back.
 var _pits: Dictionary = {}
-var _player_safe_pos: Vector2 = Vector2.ZERO
+## Last solid-ground position per player body — each falls back to their own
+## spot, not to wherever the other player happened to be standing.
+var _safe_pos: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 ## Separate stream for the layout. _paint_floor() draws 240 tiles off _rng, so
 ## anything that ever changes how many rolls the visuals take would reshuffle
@@ -288,7 +290,7 @@ func _physics_process(_delta: float) -> void:
 			continue
 		for b in area.get_overlapping_bodies():
 			if b.is_in_group("player"):
-				RunManager.travel(d["dir"])
+				RunManager.travel(d["dir"], b)
 				return
 
 
@@ -344,32 +346,32 @@ func _build_pits() -> void:
 ## CENTRE well inside the hole — brushing an edge is not falling, and the
 ## forgiveness is what makes rolling a gap feel fair.
 func _check_pit_fall() -> void:
-	var p := get_tree().get_first_node_in_group("player") as Node2D
-	if p == null or not is_instance_valid(p):
-		return
-	var pos := to_local(p.global_position)
-	var t := Vector2i(int(pos.x / TILE), int(pos.y / TILE))
-	if not _pits.has(t):
-		_player_safe_pos = p.global_position
-		return
-	# mid-dodge clears the gap
-	var roll = p.get("_dodge_timer")
-	if roll != null and float(roll) > 0.0:
-		return
-	var fx := pos.x - float(t.x * TILE)
-	var fy := pos.y - float(t.y * TILE)
-	if fx < 10.0 or fx > TILE - 10.0 or fy < 10.0 or fy > TILE - 10.0:
-		return
-	# down they go: a hit, a sound, and back to the last real floor
-	AudioManager.play_sfx(preload("res://assets/audio/sfx/floor_descend.wav"), 0.1, -6.0)
-	Effects.spawn_pop(self, p.global_position, 1.4)
-	if p.has_method("take_damage"):
-		p.take_damage(1, p.global_position + Vector2(0, 4))
-	if _player_safe_pos != Vector2.ZERO:
-		p.global_position = _player_safe_pos
-	else:
-		p.global_position = to_global(entry_point(""))
-	p.set(&"velocity", Vector2.ZERO)
+	for node in get_tree().get_nodes_in_group("player"):
+		var p := node as Node2D
+		# invisible = mid door-vanish in co-op; a player who is not really
+		# here must not be dropped into a hole
+		if p == null or not is_instance_valid(p) or not p.visible:
+			continue
+		var pos := to_local(p.global_position)
+		var t := Vector2i(int(pos.x / TILE), int(pos.y / TILE))
+		if not _pits.has(t):
+			_safe_pos[p.get_instance_id()] = p.global_position
+			continue
+		# mid-dodge clears the gap
+		var roll = p.get("_dodge_timer")
+		if roll != null and float(roll) > 0.0:
+			continue
+		var fx := pos.x - float(t.x * TILE)
+		var fy := pos.y - float(t.y * TILE)
+		if fx < 10.0 or fx > TILE - 10.0 or fy < 10.0 or fy > TILE - 10.0:
+			continue
+		# down they go: a hit, a sound, and back to the last real floor
+		AudioManager.play_sfx(preload("res://assets/audio/sfx/floor_descend.wav"), 0.1, -6.0)
+		Effects.spawn_pop(self, p.global_position, 1.4)
+		if p.has_method("take_damage"):
+			p.take_damage(1, p.global_position + Vector2(0, 4))
+		p.global_position = _safe_pos.get(p.get_instance_id(), to_global(entry_point("")))
+		p.set(&"velocity", Vector2.ZERO)
 
 
 ## Tile coords to the middle of that tile, in room pixels.
@@ -504,6 +506,9 @@ func _spawn_enemies(floor_index: int, difficulty: float) -> void:
 		# outgrown them by floor two. Steeper now that the run is five floors:
 		# the curve has to land on ???? being genuinely dangerous.
 		var depth := 1.0 + 0.24 * float(floor_index)
+		# two players tear through toys twice as fast; the toys push back
+		if GameState.two_player:
+			depth *= 2.0
 		e.health = data.max_health * depth
 		if difficulty > 1.2:
 			e.scale = Vector2(1.25, 1.25)

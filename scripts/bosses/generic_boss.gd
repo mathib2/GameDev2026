@@ -47,12 +47,17 @@ func _ready() -> void:
 	add_to_group("boss")
 	collision_layer = 4 | 1
 	collision_mask = 1
+	# GROUND mode's floor/wall classification has no meaning in a top-down room
+	# and catches the body on corners (a diagonal charge can pin against two
+	# walls instead of sliding along one). FLOATING is the correct mode here.
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	if data == null:
 		push_warning("[GenericBoss] no BossData")
 		queue_free()
 		return
 
-	max_health = data.max_health * (1.0 + 0.30 * float(floor_index))
+	max_health = data.max_health * (1.0 + 0.30 * float(floor_index)) \
+		* (2.0 if GameState.two_player else 1.0)
 	health = max_health
 	if data.spritesheet != null:
 		anim.texture = data.spritesheet
@@ -90,9 +95,9 @@ func _physics_process(delta: float) -> void:
 	if state == State.INTRO or data == null:
 		return
 
-	if player == null or not is_instance_valid(player):
-		var ps := get_tree().get_nodes_in_group("player")
-		player = ps[0] if not ps.is_empty() else null
+	# re-pick every frame so both co-op players draw aggro; in 1P this
+	# returns the same node it always did
+	player = RunManager.nearest_player(global_position)
 
 	if _hurt_flash > 0.0:
 		_hurt_flash -= delta

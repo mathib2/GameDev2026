@@ -9,7 +9,8 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	visible = not get_tree().paused
+	# in co-op both players aim with sticks; a mouse reticle is nobody's
+	visible = not get_tree().paused and not GameState.two_player
 	queue_redraw()
 
 

@@ -12,6 +12,8 @@ enum Mode { MAIN, PAUSE, GAME_OVER }
 @onready var _primary: Button = $Panel/VBox/Primary
 @onready var _secondary: Button = $Panel/VBox/Secondary
 
+var _p2_btn: Button = null   ## main menu only; tracks pad count
+
 var sfx_select: AudioStream = preload("res://assets/audio/sfx/ui_select.wav")
 var sfx_confirm: AudioStream = preload("res://assets/audio/sfx/ui_confirm.wav")
 
@@ -33,6 +35,18 @@ func _ready() -> void:
 			_primary.text = "START RUN"
 			_secondary.text = "QUIT"
 			_add_volume_controls()
+			# couch co-op needs a pad in each pair of hands — the entry only
+			# exists while two are connected, and re-checks live on hot-plug.
+			# DEFERRED is load-bearing: joy_connection_changed fires from the
+			# joypad thread, and a script call from there aborts the engine.
+			_p2_btn = _extra_button("START 2P RUN", func() -> void:
+				if Input.get_connected_joypads().size() < 2:
+					return
+				get_tree().current_scene.start_run(true))
+			$Panel/VBox.move_child(_p2_btn, _primary.get_index() + 1)
+			_p2_btn.visible = Input.get_connected_joypads().size() >= 2
+			Input.joy_connection_changed.connect(
+				_on_joy_connection_changed, CONNECT_DEFERRED)
 		Mode.PAUSE:
 			_dress_main_menu(false)
 			_title.text = "PAUSED!"
@@ -47,6 +61,15 @@ func _ready() -> void:
 			_secondary.text = "MAIN MENU"
 			_style_paper(_title, 20, Color(0.20, 0.19, 0.23))
 			_style_paper(_subtitle, 9, Color(0.42, 0.40, 0.44))
+
+	# controller/keyboard focus: grab it whenever this panel becomes the
+	# visible one, so ui_up/down/left/right + ui_accept (built-in joypad
+	# defaults) have somewhere to start navigating from.
+	visibility_changed.connect(func() -> void:
+		if visible:
+			_primary.grab_focus())
+	if visible:
+		_primary.grab_focus()
 
 
 ## Turns the plain dark panel into the paper-and-pinned-note main menu.
@@ -142,7 +165,12 @@ func _dress_main_menu(full: bool = true) -> void:
 				return)
 
 
-func _extra_button(text: String, action: Callable) -> void:
+func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
+	if _p2_btn != null:
+		_p2_btn.visible = Input.get_connected_joypads().size() >= 2
+
+
+func _extra_button(text: String, action: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	_style_paper(b, 12, Color(0.24, 0.23, 0.28))
@@ -156,6 +184,7 @@ func _extra_button(text: String, action: Callable) -> void:
 	var vb: VBoxContainer = $Panel/VBox
 	vb.add_child(b)
 	vb.move_child(b, _secondary.get_index())
+	return b
 
 
 ## Menu text on paper: dark ink, no button chrome, and a light hover tint —
@@ -200,6 +229,19 @@ func _add_volume_controls() -> void:
 		row.add_child(slider)
 		vbox.add_child(row)
 
+	var shake_row := HBoxContainer.new()
+	var shake_lab := Label.new()
+	shake_lab.text = "SCREEN SHAKE"
+	shake_lab.custom_minimum_size = Vector2(52, 0)
+	shake_row.add_child(shake_lab)
+	var shake_box := CheckBox.new()
+	shake_box.button_pressed = GameFeel.shake_enabled
+	shake_box.toggled.connect(func(v: bool) -> void:
+		SaveManager.set_shake_enabled(v)
+		AudioManager.play_sfx(sfx_select, 0.05, -6.0))
+	shake_row.add_child(shake_box)
+	vbox.add_child(shake_row)
+
 
 func setup(victory: bool) -> void:
 	if victory:
@@ -217,8 +259,16 @@ func _on_primary() -> void:
 	AudioManager.play_sfx(sfx_confirm)
 	var main := get_tree().current_scene
 	match mode:
-		Mode.MAIN, Mode.GAME_OVER:
-			main.start_run()
+		Mode.MAIN:
+			# explicit: a 2P death must not leak co-op into the next 1P run
+			main.start_run(false)
+		Mode.GAME_OVER:
+			# RUN IT BACK keeps the mode you died in, pads permitting
+			var coop: bool = GameState.two_player \
+				and Input.get_connected_joypads().size() >= 2
+			if GameState.two_player and not coop:
+				EventBus.toast.emit("P2 CONTROLLER MISSING — 1P RUN", Color(1, 0.7, 0.5))
+			main.start_run(coop)
 		Mode.PAUSE:
 			main._toggle_pause()
 

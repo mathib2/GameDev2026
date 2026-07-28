@@ -102,16 +102,18 @@ func _on_entered(body: Node) -> void:
 	if not _armed or not body.is_in_group("player"):
 		return
 	_armed = false
-	if GameState.skill_maxed(skill_id):
+	# the toucher pays and levels — in co-op the two players progress apart
+	var p: int = body.get("player_index") if body.get("player_index") != null else 0
+	if GameState.skill_maxed(skill_id, p):
 		AudioManager.play_sfx(sfx_deny, 0.0, -6.0)
 		return
-	if GameState.skill_blocked(skill_id):
+	if GameState.skill_blocked(skill_id, p):
 		AudioManager.play_sfx(sfx_deny, 0.0, -4.0)
 		EventBus.toast.emit("ONLY %d SKILLS PER RUN" % GameState.MAX_SKILLS,
 			Color(1, 0.55, 0.5))
 		return
-	var cost := GameState.skill_cost(skill_id)
-	if not GameState.upgrade_skill(skill_id):
+	var cost := GameState.skill_cost(skill_id, p)
+	if not GameState.upgrade_skill(skill_id, p):
 		AudioManager.play_sfx(sfx_deny, 0.0, -4.0)
 		EventBus.toast.emit("NEED %d COINS" % cost, Color(1, 0.5, 0.45))
 		return
@@ -119,7 +121,7 @@ func _on_entered(body: Node) -> void:
 	var def: Dictionary = GameState.SKILLS.get(skill_id, {})
 	AudioManager.play_sfx(sfx_buy, 0.05, 2.0)
 	EventBus.toast.emit("%s %d" % [def.get("name", "SKILL"),
-		GameState.skill_level(skill_id)], TINTS.get(skill_id, Color.WHITE))
+		GameState.skill_level(skill_id, p)], TINTS.get(skill_id, Color.WHITE))
 	EventBus.screen_shake.emit(2.5, 0.18)
 	Effects.spawn_pop(get_parent(), global_position + Vector2(0, -8), 1.8)
 	Effects.spawn_burst(get_parent(), global_position + Vector2(0, -8),

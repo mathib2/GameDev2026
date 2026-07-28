@@ -11,6 +11,10 @@ const FIRE_COOLDOWN := 1.15
 const FIRE_RANGE := 230.0
 const BASE_DAMAGE := 1.5
 
+## Which player this teddy defected to. Set by RunManager at spawn; it trots
+## after its owner and scales with their damage, not player 1's.
+var owner_index: int = 0
+
 var _cd: float = 0.6
 
 @onready var anim: SheetAnimator = $SheetAnimator
@@ -42,8 +46,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _player() -> Node2D:
-	var ps := get_tree().get_nodes_in_group("player")
-	return ps[0] if not ps.is_empty() else null
+	var p := RunManager.player2 if owner_index == 1 else RunManager.player
+	return p if p != null and is_instance_valid(p) else null
 
 
 func _try_shoot() -> void:
@@ -65,5 +69,5 @@ func _try_shoot() -> void:
 	var p := PROJECTILE.instantiate()
 	get_parent().add_child(p)
 	p.global_position = global_position + dir * 12.0
-	p.setup(null, dir * 300.0, BASE_DAMAGE * GameState.stat("damage_mult"),
+	p.setup(null, dir * 300.0, BASE_DAMAGE * GameState.stat("damage_mult", owner_index),
 		true, 320.0, 0, false)

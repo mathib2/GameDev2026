@@ -6,6 +6,11 @@ extends Node
 const ROOM_SCENE := preload("res://scenes/rooms/Room.tscn")
 const PLAYER_SCENE := preload("res://scenes/player/Player.tscn")
 
+## Every action that gets a per-pad clone in co-op (see _ensure_coop_actions).
+const COOP_ACTIONS := ["move_left", "move_right", "move_up", "move_down",
+	"aim_left", "aim_right", "aim_up", "aim_down",
+	"attack", "dodge", "interact"]
+
 ## Five floors, one boss each — the cap is deliberate. The place replicates
 ## somewhere you would train: a playground, a gym, a steam room, an arena.
 ## Below the arena there is one more floor, and it does not replicate
@@ -19,6 +24,7 @@ var generator: FloorGenerator
 var current_info                       ## FloorGenerator.RoomInfo
 var current_room: Node2D
 var player: Node2D
+var player2: Node2D = null             ## co-op only; null in 1P
 
 var world: Node = null                 ## set by Main
 var _rng := RandomNumberGenerator.new()
@@ -78,12 +84,29 @@ func _ready() -> void:
 	EventBus.item_collected.connect(_on_item_collected)
 
 
-func _on_item_collected(item: ItemData) -> void:
-	if item.companion_scene == "" or world == null or player == null:
+func _on_item_collected(item: ItemData, p: int) -> void:
+	var owner_node := player2 if p == 1 else player
+	if item.companion_scene == "" or world == null or owner_node == null:
 		return
 	var companion := (load(item.companion_scene) as PackedScene).instantiate()
+	companion.set("owner_index", p)
 	world.add_child(companion)
-	companion.global_position = player.global_position + Vector2(-20, -8)
+	companion.global_position = owner_node.global_position + Vector2(-20, -8)
+
+
+## Nearest living, present player — the one thing enemies ask about players.
+## Reads the two vars directly (no group scan); skips a player mid door-vanish.
+func nearest_player(pos: Vector2) -> Node2D:
+	var best: Node2D = null
+	var best_d := INF
+	for p in [player, player2]:
+		if p == null or not is_instance_valid(p) or not p.visible:
+			continue
+		var d := pos.distance_squared_to(p.global_position)
+		if d < best_d:
+			best_d = d
+			best = p
+	return best
 
 
 func _process(delta: float) -> void:
@@ -93,12 +116,17 @@ func _process(delta: float) -> void:
 		GameState.run_time += delta
 
 
-func start_run() -> void:
+func start_run(two_player: bool = false) -> void:
 	GameState.reset()
+	GameState.two_player = two_player    # after reset, which clears it
 	GameFeel.reset()
+	if two_player:
+		_ensure_coop_actions()
 	var fists := ContentDB.get_weapon(&"fists")
 	if fists != null:
 		GameState.equip(fists)
+		if two_player:
+			GameState.equip(fists, 1)
 	# Drop the previous run's player.
 	#
 	# _load_room() reuses the existing player whenever the node is still valid,
@@ -108,12 +136,36 @@ func start_run() -> void:
 	if player != null and is_instance_valid(player):
 		player.queue_free()
 	player = null
+	if player2 != null and is_instance_valid(player2):
+		player2.queue_free()
+	player2 = null
 
 	_rng.randomize()
 	_run_active = true
 	EventBus.run_started.emit()
 	_enter_floor(0)
 	_place_starter_weapon()
+
+
+## Clones each gameplay action's joypad events into p0_*/p1_* variants bound
+## to one physical pad each, so the two players stop sharing every button.
+## Cloning (rather than authoring events here) inherits the real bindings —
+## dodge's two buttons, the stick deadzones — and survives future remapping.
+func _ensure_coop_actions() -> void:
+	var pads := Input.get_connected_joypads()
+	if pads.size() < 2:
+		return
+	for p in 2:
+		for base in COOP_ACTIONS:
+			var cloned := StringName("p%d_%s" % [p, base])
+			if InputMap.has_action(cloned):
+				InputMap.erase_action(cloned)   # pad ids change between sessions
+			InputMap.add_action(cloned, InputMap.action_get_deadzone(base))
+			for ev in InputMap.action_get_events(base):
+				if ev is InputEventJoypadButton or ev is InputEventJoypadMotion:
+					var copy: InputEvent = ev.duplicate()
+					copy.device = pads[p]
+					InputMap.action_add_event(cloned, copy)
 
 
 ## Puts one gun on a pedestal in the room the run starts in.
@@ -165,6 +217,8 @@ func _load_room(info, from_dir: String) -> void:
 
 	if player == null or not is_instance_valid(player):
 		player = PLAYER_SCENE.instantiate()
+		if GameState.two_player:
+			player.set("input_prefix", "p0_")   # before add_child: _ready reads it
 		world.add_child(player)
 	else:
 		# keep the player alive across rooms; just move them
@@ -173,6 +227,20 @@ func _load_room(info, from_dir: String) -> void:
 			world.add_child(player)
 	player.global_position = current_room.entry_point(from_dir)
 	player.velocity = Vector2.ZERO
+	if GameState.two_player:
+		if player2 == null or not is_instance_valid(player2):
+			player2 = PLAYER_SCENE.instantiate()
+			player2.set("player_index", 1)
+			player2.set("input_prefix", "p1_")
+			# placeholder skin: same sheet, cool tint, until P2 gets real art
+			player2.modulate = Color(0.85, 0.95, 1.0)
+			world.add_child(player2)
+		elif player2.get_parent() != world:
+			player2.get_parent().remove_child(player2)
+			world.add_child(player2)
+		# both placed BEFORE populate(), so spawn safety sees them at the door
+		player2.global_position = current_room.entry_point(from_dir) + Vector2(18, 12)
+		player2.velocity = Vector2.ZERO
 	_apply_camera_limits()
 
 	current_room.populate(GameState.floor_index)
@@ -203,8 +271,10 @@ func _apply_camera_limits() -> void:
 	cam.reset_smoothing()
 
 
-## Called by a room's door trigger.
-func travel(dir: String) -> void:
+## Called by a room's door trigger. `who` is the body that touched the door —
+## only used in co-op, where the toucher vanishes and both players arrive
+## together half a second later.
+func travel(dir: String, who: Node2D = null) -> void:
 	if _travelling or current_info == null:
 		return
 	var next = generator.neighbour(current_info, dir)
@@ -215,7 +285,29 @@ func travel(dir: String) -> void:
 	_travelling = true
 	AudioManager.play_sfx(sfx_door)
 	current_info = next
-	_finish_travel.call_deferred(next, dir)
+	if GameState.two_player and who != null:
+		who.visible = false                # vanish reads on this very frame
+		_travel_coop.call_deferred(who, next, dir)
+	else:
+		_finish_travel.call_deferred(next, dir)
+
+
+## The co-op door beat: toucher gone, half a second of "they went ahead",
+## then the whole party arrives at once.
+func _travel_coop(who: Node2D, next, dir: String) -> void:
+	if is_instance_valid(who):
+		who.process_mode = Node.PROCESS_MODE_DISABLED
+	await get_tree().create_timer(0.5).timeout
+	if is_instance_valid(who):
+		who.visible = true
+		who.process_mode = Node.PROCESS_MODE_INHERIT
+	# death or quit-to-menu during the wait: do NOT build a room under the
+	# game-over screen — just release the lock and stop
+	if not _run_active or world == null or current_room == null \
+			or not is_instance_valid(current_room):
+		_travelling = false
+		return
+	_finish_travel(next, dir)              # already at idle; no re-defer
 
 
 ## Building a room registers hundreds of wall, crate and enemy collision

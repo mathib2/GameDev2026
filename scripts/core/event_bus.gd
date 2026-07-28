@@ -30,8 +30,8 @@ signal boss_intro_finished()
 
 # ── economy / progression ─────────────────────────────────────────────────
 signal coins_changed(total: int)
-signal item_collected(item: ItemData)
-signal weapon_equipped(weapon: WeaponData)
+signal item_collected(item: ItemData, player: int)
+signal weapon_equipped(weapon: WeaponData, player: int)
 signal stat_changed()
 
 # ── presentation ──────────────────────────────────────────────────────────

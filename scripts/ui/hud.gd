@@ -36,9 +36,10 @@ func _ready() -> void:
 	_weapon_icon.custom_minimum_size = Vector2(18, 18)
 	_weapon_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	$Root/Top.add_child(_weapon_icon)
-	EventBus.weapon_equipped.connect(func(w: WeaponData) -> void:
-		_weapon_icon.texture = w.icon if w != null else null
-		_weapon_icon.tooltip_text = w.display_name if w != null else "")
+	EventBus.weapon_equipped.connect(func(w: WeaponData, p: int) -> void:
+		var icon := _weapon_icon2 if p == 1 else _weapon_icon
+		icon.texture = w.icon if w != null else null
+		icon.tooltip_text = w.display_name if w != null else "")
 
 	# aiming reticle, drawn above everything else on the HUD
 	var crosshair: Control = load("res://scripts/ui/crosshair.gd").new()
@@ -66,8 +67,9 @@ func _ready() -> void:
 	EventBus.minimap_dirty.connect(func(): _minimap.queue_redraw())
 	_build_extras()
 	EventBus.stat_changed.connect(_refresh_skills)
-	EventBus.weapon_equipped.connect(func(w: WeaponData) -> void:
-		_weapon_name.text = w.display_name.to_upper() if w != null else "")
+	EventBus.weapon_equipped.connect(func(w: WeaponData, p: int) -> void:
+		if p == 0:
+			_weapon_name.text = w.display_name.to_upper() if w != null else "")
 	EventBus.run_started.connect(func():
 		_rebuild_hearts()
 		_coins.text = "0 ¢"
@@ -76,6 +78,14 @@ func _ready() -> void:
 		# show the previous run's items forever
 		for c in _items.get_children():
 			c.queue_free()
+		# P2 item icons only — the weapon slot was just set by the fists
+		# equip that precedes run_started, so it must survive this sweep
+		for c in _items2.get_children():
+			if c != _weapon_icon2:
+				c.queue_free()
+		# the co-op halves of the HUD only earn their pixels in a co-op run
+		_items2.visible = GameState.two_player
+		_skills_row2.visible = GameState.two_player
 		_boss_bar.visible = false
 		_intro.visible = false)
 
@@ -91,6 +101,8 @@ func _process(delta: float) -> void:
 			_toast.visible = false
 	if _flash.color.a > 0.0:
 		_flash.color.a = maxf(0.0, _flash.color.a - delta * 3.0)
+	var secs := int(GameState.run_time)
+	_timer_label.text = "%d:%02d" % [secs / 60, secs % 60]
 
 
 func _rebuild_hearts() -> void:
@@ -113,7 +125,7 @@ func _rebuild_hearts() -> void:
 		_hearts.add_child(t)
 
 
-func _on_item(item: ItemData) -> void:
+func _on_item(item: ItemData, p: int) -> void:
 	if item.icon == null:
 		return
 	var t := TextureRect.new()
@@ -121,7 +133,7 @@ func _on_item(item: ItemData) -> void:
 	t.custom_minimum_size = Vector2(16, 16)
 	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	t.tooltip_text = item.display_name
-	_items.add_child(t)
+	(_items2 if p == 1 else _items).add_child(t)
 
 
 func _on_toast(text: String, colour: Color) -> void:
@@ -174,6 +186,12 @@ func _on_intro(display_name: String, subtitle: String) -> void:
 var _skills_row: HBoxContainer
 var _weapon_name: Label
 var _legend: HBoxContainer
+var _timer_label: Label
+# co-op: player 2's half of the split HUD — items/weapon top-right,
+# skills bottom-right. Hidden outside 2P runs.
+var _items2: HBoxContainer
+var _weapon_icon2: TextureRect
+var _skills_row2: HBoxContainer
 
 
 func _build_extras() -> void:
@@ -214,14 +232,54 @@ func _build_extras() -> void:
 		chip.add_theme_constant_override("outline_size", 3)
 		_legend.add_child(chip)
 
+	# run clock, bottom-right corner
+	_timer_label = Label.new()
+	_timer_label.custom_minimum_size = Vector2(70, 14)
+	_timer_label.position = Vector2(632 - 70, 384 - 8 - 14)
+	_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_timer_label.add_theme_font_size_override("font_size", 10)
+	_timer_label.add_theme_color_override("font_color", Color(0.9, 0.88, 0.92))
+	_timer_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_timer_label.add_theme_constant_override("outline_size", 4)
+	_timer_label.text = "0:00"
+	$Root.add_child(_timer_label)
+
+	# player 2's strip: weapon slot + items, right edge pinned below the top
+	# bar and left of the minimap, growing leftward as items accumulate
+	_items2 = HBoxContainer.new()
+	_items2.position = Vector2(528, 32)
+	_items2.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_items2.add_theme_constant_override("separation", 3)
+	_items2.visible = false
+	$Root.add_child(_items2)
+	_weapon_icon2 = TextureRect.new()
+	_weapon_icon2.custom_minimum_size = Vector2(18, 18)
+	_weapon_icon2.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_items2.add_child(_weapon_icon2)
+
+	# player 2's skills, bottom-right, mirroring player 1's bottom-left row
+	# (y 344 keeps it clear of the run clock at 362)
+	_skills_row2 = HBoxContainer.new()
+	_skills_row2.position = Vector2(632, 344)
+	_skills_row2.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_skills_row2.add_theme_constant_override("separation", 8)
+	_skills_row2.visible = false
+	$Root.add_child(_skills_row2)
+
 
 func _refresh_skills() -> void:
 	if _skills_row == null:
 		return
-	for c in _skills_row.get_children():
+	_fill_skills_row(_skills_row, 0)
+	if _skills_row2 != null and GameState.two_player:
+		_fill_skills_row(_skills_row2, 1)
+
+
+func _fill_skills_row(row: HBoxContainer, p: int) -> void:
+	for c in row.get_children():
 		c.queue_free()
 	for id in GameState.SKILLS:
-		var lvl := GameState.skill_level(id)
+		var lvl := GameState.skill_level(id, p)
 		if lvl <= 0:
 			continue                      # only show what has been invested in
 		var def: Dictionary = GameState.SKILLS[id]
@@ -232,7 +290,7 @@ func _refresh_skills() -> void:
 			load("res://scripts/items/skill_shrine.gd").TINTS.get(id, Color.WHITE))
 		l.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 		l.add_theme_constant_override("outline_size", 4)
-		_skills_row.add_child(l)
+		row.add_child(l)
 
 
 # ── minimap ───────────────────────────────────────────────────────────────

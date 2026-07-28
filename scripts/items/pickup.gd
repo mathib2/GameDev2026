@@ -28,11 +28,10 @@ func _process(delta: float) -> void:
 	_sprite.position.y = sin(_t) * 2.5
 	if _taken:
 		return
-	# magnet
-	var ps := get_tree().get_nodes_in_group("player")
-	if ps.is_empty():
+	# magnet — pulls toward whichever player is closer
+	var p := RunManager.nearest_player(global_position)
+	if p == null:
 		return
-	var p: Node2D = ps[0]
 	var d := global_position.distance_to(p.global_position)
 	if d < 52.0:
 		global_position = global_position.lerp(p.global_position, delta * 7.0)

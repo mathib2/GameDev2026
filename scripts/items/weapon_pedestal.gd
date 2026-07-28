@@ -7,9 +7,11 @@ extends Area2D
 @export var price: int = 0
 
 var _t: float = 0.0
-var _in_range: bool = false
+## The player standing at the plinth — in co-op, who the swap belongs to.
+var _shopper: Node2D = null
 
 @onready var _icon: Sprite2D = $Icon
+@onready var _glow: Sprite2D = $Icon/Glow
 @onready var _label: Label = $Label
 
 
@@ -25,9 +27,22 @@ func _ready() -> void:
 	col.shape = rect
 	solid.add_child(col)
 	add_child(solid)
-	body_entered.connect(func(b): if b.is_in_group("player"): _in_range = true)
-	body_exited.connect(func(b): if b.is_in_group("player"): _in_range = false)
+	body_entered.connect(func(b): if b.is_in_group("player"): _shopper = b)
+	body_exited.connect(func(b):
+		if b != _shopper:
+			return
+		_shopper = null
+		for other in get_overlapping_bodies():
+			if other.is_in_group("player"):
+				_shopper = other)
 	_refresh()
+
+	# soft breathing halo, so the weapon reads as pickable rather than as scenery
+	var glow_t := create_tween().set_loops()
+	glow_t.tween_property(_glow, "modulate:a", 0.65, 1.0)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	glow_t.tween_property(_glow, "modulate:a", 0.3, 1.0)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _refresh() -> void:
@@ -47,8 +62,9 @@ func _refresh() -> void:
 func _process(delta: float) -> void:
 	_t += delta * 3.0
 	_icon.position.y = -18.0 + sin(_t) * 2.0
-	_label.visible = _in_range and weapon != null
-	if _in_range and weapon != null and Input.is_action_just_pressed(&"interact"):
+	_label.visible = _shopper != null and weapon != null
+	if _shopper != null and weapon != null \
+			and Input.is_action_just_pressed(_shopper.interact_action()):
 		_collect()
 
 
@@ -57,8 +73,9 @@ func _collect() -> void:
 		EventBus.toast.emit("NOT ENOUGH COINS", Color(1, 0.5, 0.5))
 		return
 	price = 0    # once bought, the leftover swap is free to take back
-	var old: WeaponData = GameState.weapon
-	GameState.equip(weapon)
+	var buyer: int = _shopper.player_index if _shopper != null else 0
+	var old: WeaponData = GameState.weapon_of(buyer)
+	GameState.equip(weapon, buyer)
 	AudioManager.play_sfx(weapon.sfx_use if weapon.sfx_use
 		else preload("res://assets/audio/sfx/pickup_item.wav"))
 	EventBus.toast.emit("%s EQUIPPED" % weapon.display_name.to_upper(), Color(0.7, 0.9, 1.0))

@@ -47,12 +47,18 @@ func set_music_volume_db(db: float) -> void:
 	save()
 
 
+func set_shake_enabled(v: bool) -> void:
+	GameFeel.shake_enabled = v
+	save()
+
+
 func _load() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(PATH) != OK:
 		return
 	AudioManager.sfx_volume_db = cfg.get_value("audio", "sfx_db", AudioManager.sfx_volume_db)
 	AudioManager.music_volume_db = cfg.get_value("audio", "music_db", AudioManager.music_volume_db)
+	GameFeel.shake_enabled = cfg.get_value("gameplay", "shake_enabled", GameFeel.shake_enabled)
 	best_floor = cfg.get_value("meta", "best_floor", 0)
 	lifetime_kills = cfg.get_value("meta", "lifetime_kills", 0)
 	runs = cfg.get_value("meta", "runs", 0)
@@ -63,6 +69,7 @@ func save() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("audio", "sfx_db", AudioManager.sfx_volume_db)
 	cfg.set_value("audio", "music_db", AudioManager.music_volume_db)
+	cfg.set_value("gameplay", "shake_enabled", GameFeel.shake_enabled)
 	cfg.set_value("meta", "best_floor", best_floor)
 	cfg.set_value("meta", "lifetime_kills", lifetime_kills)
 	cfg.set_value("meta", "runs", runs)
