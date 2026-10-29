@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Draw the main-menu art: paper backdrop, pinned note, and the logo.
 
-Follows the Binding of Isaac main-menu layout the brief asked for — a sheet of
+Follows the Binding of Isaac main-menu layout the design calls for — a sheet of
 grubby paper covered in faint pencil doodles, a big pixel wordmark with
 something flanking it, and the options on a torn note pinned to the page.
 

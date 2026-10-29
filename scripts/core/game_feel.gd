@@ -2,8 +2,8 @@ extends Node
 
 ## Game feel. Autoload: GameFeel
 ##
-## Screen shake and hit stop. Both are deliberately short and punchy — the brief
-## prioritises "the player should immediately feel when they hit an enemy", and
+## Screen shake and hit stop. Both are deliberately short and punchy — the design
+## goal is "the player should immediately feel when they hit an enemy", and
 ## the cheapest way to get that is a few frames of frozen time plus a shove of
 ## the camera.
 ##
