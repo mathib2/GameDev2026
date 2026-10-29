@@ -16,7 +16,7 @@ Grid matches SheetAnimator.DEFAULT_ROWS exactly — 5 columns x 5 rows of 96px:
     row 2 attack (4 frames)
 
 All drawn from primitives rather than hand-pixelled, so the palette and
-proportions can be retuned in one place. The brief was "cool and scary", and at
+proportions can be retuned in one place. The goal was "cool and scary", and at
 96px the thing that actually reads as scary is silhouette and eyes — not
 detail. So: oversized heads, hollow sockets with a pinpoint of light, and a
 palette that stays cold until the moment the boss commits to an attack.

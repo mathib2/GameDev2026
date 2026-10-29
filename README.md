@@ -116,9 +116,8 @@ Seven autoloads: `EventBus` (signals only, no state), `GameState`, `ContentDB`,
 
 ## Art and audio
 
-All original — generated for this project. **The asset packs named in the brief
-could not be found anywhere** (see
-[docs/ASSET_CREDITS.md](docs/ASSET_CREDITS.md) for exactly where I looked).
+All original — generated for this project (see
+[docs/ASSET_CREDITS.md](docs/ASSET_CREDITS.md)).
 
 Swapping them in later is cheap by design: every character sheet uses one grid
 (rows = animations, columns = frames), so replacing a PNG in place needs no

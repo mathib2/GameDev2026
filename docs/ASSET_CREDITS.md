@@ -40,7 +40,7 @@ sheet, which is how you find the index to put in the `PICKS` table.
 
 ## Why the provided asset packs were not used
 
-The brief listed asset packs to integrate:
+The asset packs planned for the game:
 
 ```
 CatPackFree.zip                       UiCozyFree.png.zip
@@ -50,17 +50,9 @@ Mini RPG Retro SFX Bundle             Retro Sounds 8-Bit
 Weapon Pack - FREE                    GUNS V1.01
 ```
 
-None of them could be found. Searched:
-
-- `C:\Users\ANON2\Downloads`, `Desktop`, and the OneDrive Desktop folder
-- the whole user profile to depth 5, and `C:\` to depth 7
-- every branch of `mathib2/GameDev2026` (`master`, `godot-port`, `Agustin`,
-  `Angel`, `Edwin`, `Mathias`) — zero files with archive or audio extensions
-- the repository history
-
-Rather than block, all art and audio was generated from scratch. **If you can
-point me at the packs, swapping them in is cheap** — see "Replacing assets"
-below, which is the whole reason the pipeline is structured the way it is.
+None of them were available when the art was made, so all art and audio was generated from scratch.
+Swapping them in later is cheap — see "Replacing assets" below, which is the
+whole reason the pipeline is structured the way it is.
 
 ## What ships today
 
@@ -73,8 +65,7 @@ below, which is the whole reason the pipeline is structured the way it is.
 | Sound effects (24) | `assets/audio/sfx/` | Synthesised as 8-bit style waveforms in Python | Original — project-owned |
 | Music (5 loops) | `assets/audio/music/` | Same — square/saw leads over square bass | Original — project-owned |
 
-The generator scripts are not committed (they were scratch tooling). Say the
-word and I will add them under `tools/` so the art and audio are reproducible.
+The generator scripts are not committed (they were scratch tooling).
 
 ## Replacing assets
 
